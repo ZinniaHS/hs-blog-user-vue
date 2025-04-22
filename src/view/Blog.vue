@@ -1,14 +1,3 @@
 <template>
-  <div>
-    博客区
-  </div>
+  博客区
 </template>
-
-<script setup>
-
-</script>
-
-
-<style scoped>
-
-</style>

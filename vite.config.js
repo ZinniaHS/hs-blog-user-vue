@@ -18,6 +18,9 @@ export default defineConfig({
     Components({
       resolvers: [ElementPlusResolver()],
     }),
+    AutoImport({
+      resolvers: [ElementPlusResolver()],
+    }),
   ],
   resolve: {
     alias: {
