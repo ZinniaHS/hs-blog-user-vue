@@ -8,12 +8,15 @@
             <el-button
                 type="text"
                 @click.stop="toggleTypeMenu"
+                @click="test"
                 class="type-btn"
+                :class="{ 'active-btn': isActive }"
             >
-              筛选类型 ▼
+              全部类型
             </el-button>
           </div>
 
+          <!--    筛选栏右侧      -->
           <div class="filter-right">
             <el-button type="primary">热度最高</el-button>
             <el-button>新上架</el-button>
@@ -50,10 +53,12 @@
       </div>
     </el-affix>
 
+    <!--  当前分类提示  -->
     <div class="selected-box">
       当前筛选：<span>{{ getSelectedText }}</span>
     </div>
 
+    <!--  图书列表  -->
     <div class="book-list">
       <el-row :gutter="20">
         <el-col :span="6" v-for="(book, index) in 8" :key="index">
@@ -74,9 +79,14 @@
 <script setup>
 import { ref, computed } from 'vue'
 
+const isActive = ref(false);
 const isTypeMenuVisible = ref(false)
 const selectedFirst = ref('all')
 const selectedSecond = ref('')
+
+const test = () => {
+  isActive.value = !isActive.value;
+}
 
 const firstLevelOptions = [
   { value: 'all', label: '全部' },
@@ -148,15 +158,27 @@ const getSelectedText = computed(() => {
   align-items: center;
   gap: 8px;
 }
-
 .type-btn {
   padding: 10px 24px;
   border-radius: 4px 4px 0 0;
   background: #fff;
   color: #333;
   font-size: 16px;
-  transition: background 0.2s;
+  transition: all 0.3s; /* 增加过渡效果 */
   border-bottom: 1px solid #eee;
+}
+
+/* 高亮状态 */
+.active-btn {
+  background: #409eff !important;
+  color: #fff !important;
+  border-bottom: none !important;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* 点击瞬时反馈 */
+.type-btn:active {
+  transform: scale(0.98);
 }
 
 .type-btn:hover {
