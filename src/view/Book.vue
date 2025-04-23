@@ -8,14 +8,12 @@
             <el-button
                 type="text"
                 @click.stop="toggleTypeMenu"
-                @click="test"
                 class="type-btn"
                 :class="{ 'active-btn': isActive }"
             >
               全部类型
             </el-button>
           </div>
-
           <!--    筛选栏右侧      -->
           <div class="filter-right">
             <el-button type="primary">热度最高</el-button>
@@ -60,51 +58,70 @@
 
     <!--  图书列表  -->
     <div class="book-list">
-      <el-row :gutter="20">
-        <el-col :span="6" v-for="(book, index) in 8" :key="index">
+      <el-row :gutter="[16, 16]">
+        <el-col
+            v-for="(book, index) in books.record"
+            :key="index"
+            :xs="24"
+            :sm="12"
+            :md="12"
+            :lg="12"
+        >
           <el-card class="book-card">
-            <div class="book-cover"></div>
-            <div class="book-info">
-              <h3>图书名称 {{ index + 1 }}</h3>
-              <p>作者：张三</p>
-              <p>评分：⭐⭐⭐⭐⭐</p>
+            <div class="book-content">
+              <!--  封面   -->
+              <div class="book-cover">
+                <img :src="book.cover" alt="书籍封面" />
+              </div>
+              <!--  图书信息   -->
+              <div class="book-info">
+                <h1 class="book-title">{{ book.title }}</h1>
+                <p class="book-author">作者：{{ book.author }}</p>
+                <p class="book-desc">{{ book.description }}</p>
+                <div class="book-meta">
+                  <el-tag type="primary" size="small">热度：{{ book.downloadCount }}</el-tag>
+                </div>
+              </div>
             </div>
           </el-card>
         </el-col>
       </el-row>
     </div>
+
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import {reactive, ref, computed } from 'vue'
+import request from '@/utils/request'
 
 const isActive = ref(false);
 const isTypeMenuVisible = ref(false)
 const selectedFirst = ref('all')
 const selectedSecond = ref('')
+const currentSecondLevelOptions = computed(() => secondLevelMap[selectedFirst.value] || [])
+const showSecondMenu = computed(() => selectedFirst.value !== 'all')
 
-const test = () => {
-  isActive.value = !isActive.value;
-}
+const books = reactive({
+  record: [],
+})
 
+
+// 一级菜单中的选项
 const firstLevelOptions = [
-  { value: 'all', label: '全部' },
+  { value: 'all', label: '全部'},
   { value: 'a', label: '甲' },
   { value: 'b', label: '乙' },
   { value: 'c', label: '丙' },
   { value: 'd', label: '丁' }
 ]
-
+// 二级菜单中的选项
 const secondLevelMap = {
   a: [{ value: 'typeA1', label: '类型A1' }, { value: 'typeA2', label: '类型A2' }],
   b: [{ value: 'typeB1', label: '类型B1' }, { value: 'typeB2', label: '类型B2' }, { value: 'typeB3', label: '类型B3' }],
   c: [{ value: 'typeC1', label: '类型C1' }],
   d: [{ value: 'typeD1', label: '类型D1' }, { value: 'typeD2', label: '类型D2' }]
 }
-
-const currentSecondLevelOptions = computed(() => secondLevelMap[selectedFirst.value] || [])
-const showSecondMenu = computed(() => selectedFirst.value !== 'all')
 
 function toggleTypeMenu() {
   isTypeMenuVisible.value = !isTypeMenuVisible.value
@@ -130,6 +147,32 @@ const getSelectedText = computed(() => {
   const second = (secondLevelMap[selectedFirst.value] || []).find(item => item.value === selectedSecond.value)
   return second ? `${first.label} > ${second.label}` : first.label
 })
+
+// 分页查询实体
+const bookPageQueryDTO = reactive({
+  pageNum: 1,
+  pageSize: 5,
+  keyWord: '',
+})
+// 分页查询
+const load = () =>{
+  request.get('/user/book/page',{
+    params: {
+      pageNum: bookPageQueryDTO.pageNum,
+      pageSize: bookPageQueryDTO.pageSize,
+      keyWord: bookPageQueryDTO.keyWord
+    }
+  }).then((res) => {
+    books.record = res.data.records
+    console.log(bookdata.books)
+  }).catch((err) => {
+    console.log(err)
+  })
+}
+// 加载页面时调用分页查询
+load()
+
+
 </script>
 
 <style scoped>
@@ -256,28 +299,92 @@ const getSelectedText = computed(() => {
   font-size: 15px;
 }
 
+.el-col {
+  padding: 8px !important;
+}
+
 .book-list {
-  margin-top: 20px;
+  padding: 10px;
+  gap: 16px;
 }
 
 .book-card {
-  margin-bottom: 20px;
-  transition: transform 0.3s;
+  min-height: 100%;
+  display: flex;
+  flex-direction: row;
+  margin: 10px !important;
+  transition: all 0.3s;
+
+}
+
+.book-content {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+}
+
+.book-cover {
+  flex: 0 0 100px;
+  padding: 5px;
+}
+
+.book-cover img {
+  width: 100%;
+  height: auto;
+  max-height: 150px;
+  object-fit: cover;
+  border-radius: 2px;
+}
+
+.book-info {
+  flex: 1;
+  padding: 0 7px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.book-title {
+  margin: 0 0 8px;
+  font-size: 18px;
+  color: #333;
+}
+
+.book-author {
+  color: #666;
+  margin: 3px 0;
+  font-size: 12px;
+}
+
+.book-desc {
+  flex: 1;
+  color: #444;
+  margin: 8px 0;
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.book-meta {
+  margin-top: 10px;
+}
+
+
+@media (max-width: 768px) {
+  .el-col {
+    padding: 4px !important;
+  }
+  .book-card {
+    margin: 4px !important;
+  }
 }
 
 .book-card:hover {
   transform: translateY(-5px);
-}
-
-.book-cover {
-  width: 100%;
-  height: 200px;
-  background-color: #eee;
-  border-radius: 4px;
-}
-
-.book-info {
-  padding: 15px 0;
 }
 
 .fade-enter-active, .fade-leave-active {
