@@ -4,7 +4,7 @@
       <div class="filter-affix">
         <div class="filter-bar">
           <div class="type-toggle">
-          <!--     筛选类型按钮       -->
+            <!--     筛选类型按钮       -->
             <el-button
                 type="text"
                 @click.stop="toggleTypeMenu"
@@ -77,7 +77,13 @@
               <div class="book-info">
                 <h1 class="book-title">{{ book.title }}</h1>
                 <p class="book-author">作者：{{ book.author }}</p>
-                <p class="book-desc">{{ book.description }}</p>
+                <!--                <el-tooltip-->
+                <!--                    :content="book.description"-->
+                <!--                    raw-content-->
+                <!--                    class="custom-tooltip"-->
+                <!--                >-->
+                <p class="book-desc" >{{ book.description }}</p>
+                <!--                </el-tooltip>-->
                 <div class="book-meta">
                   <el-tag type="primary" size="small">热度：{{ book.downloadCount }}</el-tag>
                 </div>
@@ -86,6 +92,19 @@
           </el-card>
         </el-col>
       </el-row>
+    </div>
+
+    <!-- 分页 -->
+    <div class="pagination-wrapper">
+      <el-pagination
+          v-model:current-page="bookPageQueryDTO.pageNum"
+          v-model:page-size="bookPageQueryDTO.pageSize"
+          :page-sizes="[6, 10, 20]"
+          background
+          layout="total, sizes, prev, pager, next, jumper"
+          :total="books.total"
+          @size-change="handleSizeChange"
+          @current-change="handleCurrentChange"/>
     </div>
 
   </div>
@@ -101,57 +120,81 @@ const selectedFirst = ref('all')
 const selectedSecond = ref('')
 const currentSecondLevelOptions = computed(() => secondLevelMap[selectedFirst.value] || [])
 const showSecondMenu = computed(() => selectedFirst.value !== 'all')
-
+// 图书的总记录数与数据
 const books = reactive({
+  total: 0,
   record: [],
 })
-
-
 // 一级菜单中的选项
-const firstLevelOptions = [
-  { value: 'all', label: '全部'},
-  { value: 'a', label: '甲' },
-  { value: 'b', label: '乙' },
-  { value: 'c', label: '丙' },
-  { value: 'd', label: '丁' }
-]
+const firstLevelOptions = ref([{ value: 'all', label: '全部' }])
 // 二级菜单中的选项
-const secondLevelMap = {
-  a: [{ value: 'typeA1', label: '类型A1' }, { value: 'typeA2', label: '类型A2' }],
-  b: [{ value: 'typeB1', label: '类型B1' }, { value: 'typeB2', label: '类型B2' }, { value: 'typeB3', label: '类型B3' }],
-  c: [{ value: 'typeC1', label: '类型C1' }],
-  d: [{ value: 'typeD1', label: '类型D1' }, { value: 'typeD2', label: '类型D2' }]
-}
+const secondLevelMap = reactive({})
+// 获取所有类型
+function getAllCategory() {
+  request.get('/user/bookCategory/all')
+      .then(res => {
+        console.log(res)
+        const data = res.data // 直接是数组
 
+        // 重置
+        firstLevelOptions.value = [{ value: 'all', label: '全部' }]
+        Object.keys(secondLevelMap).forEach(key => delete secondLevelMap[key])
+
+        data.forEach(category => {
+          // 一级菜单
+          firstLevelOptions.value.push({
+            value: String(category.id),
+            label: category.name
+          })
+
+          // 二级菜单
+          if (Array.isArray(category.children) && category.children.length > 0) {
+            secondLevelMap[String(category.id)] = category.children.map(child => ({
+              value: String(child.id),
+              label: child.name
+            }))
+          } else {
+            secondLevelMap[String(category.id)] = []
+          }
+        })
+      })
+      .catch(err => {
+        console.log(err)
+      })
+}
+getAllCategory()
+// 点击全部类型筛选后触发
 function toggleTypeMenu() {
+  console.log(isTypeMenuVisible.value)
   isTypeMenuVisible.value = !isTypeMenuVisible.value
   if (!isTypeMenuVisible.value) selectedFirst.value = 'all'
 }
-
+// 点击一级菜单选项后触发
 function handleFirstLevelClick(value) {
+  console.log(firstLevelOptions.value)
   if (selectedFirst.value !== value) {
     selectedFirst.value = value
     selectedSecond.value = ''
   }
   if (value === 'all') selectedSecond.value = ''
 }
-
+// 点击二级菜单选项后触发
 function handleSecondLevelClick(value) {
+  console.log()
   selectedSecond.value = value
 }
-
+// 获取当前选中的类型
 const getSelectedText = computed(() => {
-  const first = firstLevelOptions.find(item => item.value === selectedFirst.value)
-  if (selectedFirst.value === 'all') return first.label
-  if (!selectedSecond.value) return first.label
+  const first = firstLevelOptions.value.find(item => item.value === selectedFirst.value)
+  if (selectedFirst.value === 'all') return first?.label || ''
+  if (!selectedSecond.value) return first?.label || ''
   const second = (secondLevelMap[selectedFirst.value] || []).find(item => item.value === selectedSecond.value)
-  return second ? `${first.label} > ${second.label}` : first.label
+  return second ? `${first?.label || ''} > ${second.label}` : first?.label || ''
 })
-
 // 分页查询实体
 const bookPageQueryDTO = reactive({
   pageNum: 1,
-  pageSize: 5,
+  pageSize: 10,
   keyWord: '',
 })
 // 分页查询
@@ -163,15 +206,23 @@ const load = () =>{
       keyWord: bookPageQueryDTO.keyWord
     }
   }).then((res) => {
+    books.total = res.data.total
     books.record = res.data.records
-    console.log(bookdata.books)
   }).catch((err) => {
     console.log(err)
   })
 }
 // 加载页面时调用分页查询
 load()
-
+// 选择每页显示多少条记录时，触发分页查询
+const handleSizeChange = () =>{
+  load()
+}
+// 点击其他页面的时候触发分页查询
+const handleCurrentChange = () =>{
+  console.log(bookPageQueryDTO.pageNum)
+  load()
+}
 
 </script>
 
@@ -207,11 +258,10 @@ load()
   background: #fff;
   color: #333;
   font-size: 16px;
-  transition: all 0.3s; /* 增加过渡效果 */
+  transition: all 0.3s;
   border-bottom: 1px solid #eee;
 }
 
-/* 高亮状态 */
 .active-btn {
   background: #409eff !important;
   color: #fff !important;
@@ -219,7 +269,6 @@ load()
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
-/* 点击瞬时反馈 */
 .type-btn:active {
   transform: scale(0.98);
 }
@@ -367,6 +416,7 @@ load()
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
+  cursor: pointer;
 }
 
 .book-meta {
@@ -387,10 +437,16 @@ load()
   transform: translateY(-5px);
 }
 
-.fade-enter-active, .fade-leave-active {
-  transition: opacity 0.2s;
+.custom-tooltip{
+  width: auto !important;
+  max-width: 100px;
 }
-.fade-enter-from, .fade-leave-to {
-  opacity: 0;
+
+.pagination-wrapper {
+  margin: 20px 0;
+  display: flex;
+  justify-content: center;
+  padding: 0 20px;
 }
+
 </style>
