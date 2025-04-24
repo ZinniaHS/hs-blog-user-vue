@@ -31,10 +31,12 @@
 </template>
 
 <script lang="ts" setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import router from '@/router';
 
-const activeIndex = ref('1')
+const activeIndex = computed(() =>
+    router.currentRoute.value.meta.menuIndex || '0'
+)
 const handleSelect = (key: string, keyPath: string[]) => {
   console.log(key, keyPath)
 }

@@ -114,17 +114,28 @@
 import {reactive, ref, computed } from 'vue'
 import request from '@/utils/request'
 
+// 全部类型按钮是否激活
 const isActive = ref(false);
+// 全部类型是否展开
 const isTypeMenuVisible = ref(false)
+// 默认一级菜单选中全部
 const selectedFirst = ref('all')
+// 二级菜单初始值
 const selectedSecond = ref('')
+// 得到目前选中一级菜单下的二级菜单的值
 const currentSecondLevelOptions = computed(() => secondLevelMap[selectedFirst.value] || [])
+// 展开一级菜单下的二级菜单
 const showSecondMenu = computed(() => selectedFirst.value !== 'all')
 // 图书的总记录数与数据
 const books = reactive({
   total: 0,
   record: [],
 })
+// 点击全部类型筛选后触发
+function toggleTypeMenu() {
+  isTypeMenuVisible.value = !isTypeMenuVisible.value
+  if (!isTypeMenuVisible.value) selectedFirst.value = 'all'
+}
 // 一级菜单中的选项
 const firstLevelOptions = ref([{ value: 'all', label: '全部' }])
 // 二级菜单中的选项
@@ -133,28 +144,36 @@ const secondLevelMap = reactive({})
 function getAllCategory() {
   request.get('/user/bookCategory/all')
       .then(res => {
-        console.log(res)
-        const data = res.data // 直接是数组
+        const data = res.data
 
-        // 重置
         firstLevelOptions.value = [{ value: 'all', label: '全部' }]
         Object.keys(secondLevelMap).forEach(key => delete secondLevelMap[key])
 
         data.forEach(category => {
-          // 一级菜单
           firstLevelOptions.value.push({
             value: String(category.id),
             label: category.name
           })
 
-          // 二级菜单
           if (Array.isArray(category.children) && category.children.length > 0) {
-            secondLevelMap[String(category.id)] = category.children.map(child => ({
-              value: String(child.id),
+            // 添加"全部"选项到子分类前面
+            const childrenWithAll = [
+              {
+                value: 'all',
+                label: '全部',
+                // 保持与后端接口一致的字段名
+                id: 'all',
+                name: '全部'
+              },
+              ...category.children
+            ].map(child => ({
+              value: child.id === 'all' ? 'all' : String(child.id),
               label: child.name
             }))
+
+            secondLevelMap[String(category.id)] = childrenWithAll
           } else {
-            secondLevelMap[String(category.id)] = []
+            secondLevelMap[String(category.id)] = [{ value: 'all', label: '全部' }]
           }
         })
       })
@@ -162,33 +181,56 @@ function getAllCategory() {
         console.log(err)
       })
 }
+// 页面启动时查询所有类型
 getAllCategory()
-// 点击全部类型筛选后触发
-function toggleTypeMenu() {
-  console.log(isTypeMenuVisible.value)
-  isTypeMenuVisible.value = !isTypeMenuVisible.value
-  if (!isTypeMenuVisible.value) selectedFirst.value = 'all'
+// 查询选中类型的图书
+function getSelectedCategoryBooks(firstId, secondId) {
+  request.get('/user/book/selectedCategoryBooks',{
+    params: {
+      pageNum: bookPageQueryDTO.pageNum,
+      pageSize: bookPageQueryDTO.pageSize,
+      firstId: firstId,
+      secondId: secondId,
+    }
+  }).then((res) => {
+    console.log(res)
+    books.total = res.data.total
+    books.record = res.data.records
+  }).catch((err) => {
+    console.log(err)
+  })
 }
 // 点击一级菜单选项后触发
 function handleFirstLevelClick(value) {
-  console.log(firstLevelOptions.value)
   if (selectedFirst.value !== value) {
     selectedFirst.value = value
-    selectedSecond.value = ''
+    selectedSecond.value = value === 'all' ? '' : 'all'
   }
   if (value === 'all') selectedSecond.value = ''
+
+  // value值是categoryId
+  getSelectedCategoryBooks(value,0)
 }
 // 点击二级菜单选项后触发
 function handleSecondLevelClick(value) {
-  console.log()
   selectedSecond.value = value
+  if(value === 'all')
+    getSelectedCategoryBooks(selectedFirst.value,0)
+  else
+    getSelectedCategoryBooks(selectedFirst.value,value)
 }
 // 获取当前选中的类型
 const getSelectedText = computed(() => {
   const first = firstLevelOptions.value.find(item => item.value === selectedFirst.value)
+
   if (selectedFirst.value === 'all') return first?.label || ''
+  if (selectedSecond.value === 'all') return `${first?.label || ''} > 全部`
   if (!selectedSecond.value) return first?.label || ''
-  const second = (secondLevelMap[selectedFirst.value] || []).find(item => item.value === selectedSecond.value)
+
+  const second = (secondLevelMap[selectedFirst.value] || []).find(
+      item => item.value === selectedSecond.value
+  )
+
   return second ? `${first?.label || ''} > ${second.label}` : first?.label || ''
 })
 // 分页查询实体
@@ -203,7 +245,7 @@ const load = () =>{
     params: {
       pageNum: bookPageQueryDTO.pageNum,
       pageSize: bookPageQueryDTO.pageSize,
-      keyWord: bookPageQueryDTO.keyWord
+      keyWord: bookPageQueryDTO.keyWord,
     }
   }).then((res) => {
     books.total = res.data.total
@@ -218,9 +260,8 @@ load()
 const handleSizeChange = () =>{
   load()
 }
-// 点击其他页面的时候触发分页查询
+// 跳转其他页面的时候触发分页查询
 const handleCurrentChange = () =>{
-  console.log(bookPageQueryDTO.pageNum)
   load()
 }
 
@@ -288,13 +329,12 @@ const handleCurrentChange = () =>{
 }
 
 .menu-item {
-
   cursor: pointer;
   padding: 8px 20px;
   border-radius: 3px;
   background: #f7f8fa;
   color: #333;
-  font-size: 15px;
+  font-size:12px;
   transition: all 0.2s;
   position: relative;
   margin-bottom: 4px;
@@ -313,8 +353,10 @@ const handleCurrentChange = () =>{
 }
 
 .second-menu-bar {
+  flex-wrap: nowrap;
+  overflow-x: auto;
   display: flex;
-  gap: 18px;
+  gap: 8px;
   background: #f7f8fa;
   padding: 10px 0 10px 10px;
   border-radius: 0 0 6px 6px;
@@ -323,12 +365,14 @@ const handleCurrentChange = () =>{
 }
 
 .second-menu-item {
+  flex-wrap: nowrap;
+  overflow-x: auto;
   cursor: pointer;
-  padding: 8px 20px;
+  padding: 6px 12px;
   border-radius: 3px;
   background: #fff;
   color: #333;
-  font-size: 15px;
+  font-size: 12px;
   transition: background 0.2s;
 }
 

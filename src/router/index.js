@@ -28,19 +28,19 @@ const router = createRouter({
                     // 子路由路径前不用添加'/'
                     path: 'home',
                     name: 'home',
-                    meta: {title :'主页'},
+                    meta: {menuIndex: '0', title :'主页'},
                     component: ()=>import( '../view/Home.vue'),
                 },
                 {
                     path: 'blog',
                     name: 'blog',
-                    meta: {title :'博客区'},
+                    meta: {menuIndex: '1', title :'博客区'},
                     component: ()=>import( '../view/Blog.vue'),
                 },
                 {
                     path: 'book',
                     name: 'book',
-                    meta: {title :'图书馆'},
+                    meta: {menuIndex: '2', title :'图书馆'},
                     component: ()=>import( '../view/Book.vue'),
                 },
             ]
