@@ -71,7 +71,7 @@
             <div class="book-content">
               <!--  封面   -->
               <div class="book-cover">
-                <img :src="book.cover" alt="书籍封面" />
+                <img :src="book.coverUrl" alt="书籍封面" />
               </div>
               <!--  图书信息   -->
               <div class="book-info">
@@ -250,6 +250,7 @@ const load = () =>{
   }).then((res) => {
     books.total = res.data.total
     books.record = res.data.records
+    console.log(books)
   }).catch((err) => {
     console.log(err)
   })
