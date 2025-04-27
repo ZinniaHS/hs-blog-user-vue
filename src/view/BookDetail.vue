@@ -34,12 +34,13 @@
 <!--          <el-descriptions-item label="字数">-->
 <!--            {{ formatWordCount(book.wordCount) }}-->
 <!--          </el-descriptions-item>-->
-
         </el-descriptions>
         <!--  按钮  -->
         <div class="action-buttons">
-          <el-button type="primary" size="small" @click="handleDownload">下载</el-button>
-          <el-button size="small" @click="handleAddToShelf">加入我的书架</el-button>
+          <a :href="book.filePath" :download="book.title">
+            <el-button type="primary" size="small" >下载</el-button>
+          </a>
+          <el-button size="small" @click="">加入我的书架</el-button>
         </div>
       </el-col>
     </el-row>
