@@ -15,10 +15,16 @@
             </el-button>
           </div>
           <!--    筛选栏右侧      -->
-          <div class="filter-right">
-            <el-button type="primary">热度最高</el-button>
-            <el-button>新上架</el-button>
-            <el-button>豆瓣高分</el-button>
+          <div class="search-container">
+            <el-input
+                v-model="searchKeyword"
+                placeholder="请输入搜索内容"
+                clearable
+                @keyup.enter="pageQuery">
+              <template #append>
+                <el-button :icon="Search" @click="pageQuery" />
+              </template>
+            </el-input>
           </div>
         </div>
         <!--    一级菜单    -->
@@ -67,7 +73,7 @@
             :md="12"
             :lg="12"
         >
-          <el-card class="book-card">
+          <el-card class="book-card" @click="goToBookDetail(book)">
             <div class="book-content">
               <!--  封面   -->
               <div class="book-cover">
@@ -113,7 +119,25 @@
 <script setup>
 import {reactive, ref, computed } from 'vue'
 import request from '@/utils/request'
+import {Search} from "@element-plus/icons-vue";
+import router from "@/router/index.js";
 
+// 点击图书后去图书详情页
+const goToBookDetail = (book) =>{
+  router.push({
+    path: '../user/bookDetail',
+    query: {
+      id: book.id,
+    }
+  })
+}
+// 搜索框中输入的内容
+const searchKeyword = ref('')
+// 点击搜索框后搜索数据
+const pageQuery = ()=>{
+  bookPageQueryDTO.keyWord = searchKeyword.value
+  load()
+}
 // 全部类型按钮是否激活
 const isActive = ref(false);
 // 全部类型是否展开
@@ -459,7 +483,7 @@ const handleCurrentChange = () =>{
   overflow: hidden;
   text-overflow: ellipsis;
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   cursor: pointer;
 }
