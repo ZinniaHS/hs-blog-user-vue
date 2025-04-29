@@ -40,7 +40,13 @@
           <a :href="book.filePath" :download="book.title">
             <el-button type="primary" size="small" >下载</el-button>
           </a>
-          <el-button size="small" @click="">加入我的书架</el-button>
+          <el-button
+              size="small"
+              @click="addToBookshelf"
+
+          >
+            加入我的书架
+          </el-button>
         </div>
       </el-col>
     </el-row>
@@ -58,10 +64,30 @@
 </template>
 
 <script setup>
-import {reactive, ref, onMounted } from 'vue'
+import {reactive, ref, onMounted, computed } from 'vue'
 import request from '@/utils/request'
 import router from "@/router/index.js";
 import {useRoute} from "vue-router";
+import { ElMessage } from 'element-plus'
+
+// 判断当前登录状态，需要登录才能加入书架
+const isLoggedIn = computed(() => !!localStorage.getItem('token'))
+// 加入书架逻辑
+const addToBookshelf = () => {
+  if (!isLoggedIn.value) {
+    ElMessage({
+      message: '请先登录！',
+    })
+    router.push({
+      path: '../login',
+      query: { redirect: router.currentRoute.value.fullPath }
+    })
+  } else {
+    // 已登录状态下的业务逻辑
+    console.log('加入书架操作')
+  }
+}
+
 const BookId = useRoute().query.id
 // 图书详情
 const book = ref({})

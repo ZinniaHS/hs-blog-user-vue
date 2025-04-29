@@ -20,6 +20,18 @@ const router = createRouter({
             component: ()=>import( '../view/404.vue'),
         },
         {
+            path: '/login',
+            name: 'login',
+            meta: {title :'登录'},
+            component: ()=>import( '../view/Login.vue'),
+        },
+        {
+            path: '/register',
+            name: 'register',
+            meta: { title: '注册' },
+            component: () => import('../view/Register.vue')
+        },
+        {
             path: '/user',
             name: 'user',
             component: ()=>import( '../view/User.vue'),

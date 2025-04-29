@@ -19,9 +19,9 @@
     <el-menu-item index="2" @click="router.push('../user/book')">图书馆</el-menu-item>
     <div class="flex-grow" />
     <el-sub-menu index="3">
-      <template #title>欢迎您</template>
+      <template #title>欢迎您，{{ username }}</template>
       <el-menu-item index="3-1">个人中心</el-menu-item>
-      <el-menu-item index="3-2">退出登录</el-menu-item>
+      <el-menu-item index="3-2" @click="handleLogout">退出登录</el-menu-item>
     </el-sub-menu>
   </el-menu>
   <!-- 中间内容区 -->
@@ -33,7 +33,19 @@
 <script lang="ts" setup>
 import { ref, computed } from 'vue'
 import router from '@/router';
+import { useRouter } from 'vue-router'
 
+
+const username = computed(() => localStorage.getItem('username') || '访客')
+
+// 退出登录逻辑
+const handleLogout = () => {
+  localStorage.removeItem('token')
+  localStorage.removeItem('username')
+  router.push('/login')
+}
+
+// 激活当前选中的栏目
 const activeIndex = computed(() =>
     router.currentRoute.value.meta.menuIndex || '0'
 )
