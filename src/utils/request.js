@@ -9,16 +9,14 @@ const request = axios.create({
 })
 //request 拦截器
 //可以自请求发送前对请求做一些处理
-request.interceptors.request.use( config => {
-    config.headers['Content-Type']= 'application/json; charset=utf-8'
-    // 从 localStorage 获取 Token 并添加到请求头
+request.interceptors.request.use(config => {
     const token = localStorage.getItem('token');
     if (token) {
-        config.headers['Authorization'] = `Bearer ${token}`;
+        config.headers.Authorization = `Bearer ${token}`;
     }
-    return config
-}, error =>{
-    return Promise.reject(error)
+    return config;
+}, error => {
+    return Promise.reject(error);
 });
 
 let isRefreshing = false

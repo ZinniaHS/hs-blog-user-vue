@@ -8,21 +8,31 @@
       background-color="#fff"
       text-color="#333"
   >
-    <el-menu-item index="0" @click="router.push('../user/home')">
+    <el-menu-item index="0" @click="router.push('/user/home')">
       <img
-          style="width: 100px"
-          src=""
-          alt="Element logo"
+          style="width: 40px"
+          src="../statics/images/brand.jpg"
+          alt="hs-blog"
       />
     </el-menu-item>
-    <el-menu-item index="1" @click="router.push('../user/blog')">博客区</el-menu-item>
-    <el-menu-item index="2" @click="router.push('../user/book')">图书馆</el-menu-item>
+    <el-menu-item index="1" @click="router.push('/user/blog')">博客区</el-menu-item>
+    <el-menu-item index="2" @click="router.push('/user/book')">图书馆</el-menu-item>
     <div class="flex-grow" />
-    <el-sub-menu index="3">
-      <template #title>欢迎您，{{ username }}</template>
-      <el-menu-item index="3-1">个人中心</el-menu-item>
-      <el-menu-item index="3-2" @click="handleLogout">退出登录</el-menu-item>
-    </el-sub-menu>
+
+    <!-- 登录状态导航 -->
+    <template v-if="isLoggedIn">
+      <el-sub-menu index="3">
+        <template #title>欢迎您，{{ username }}</template>
+        <el-menu-item index="3-1">个人中心</el-menu-item>
+        <el-menu-item index="3-2" @click="handleLogout">退出登录</el-menu-item>
+      </el-sub-menu>
+    </template>
+
+    <!-- 未登录状态导航 -->
+    <template v-else>
+      <el-menu-item index="4" @click="router.push('/login')">登录</el-menu-item>
+      <el-menu-item index="5" @click="router.push('/register')">注册</el-menu-item>
+    </template>
   </el-menu>
   <!-- 中间内容区 -->
   <div>
@@ -35,7 +45,8 @@ import { ref, computed } from 'vue'
 import router from '@/router';
 import { useRouter } from 'vue-router'
 
-
+// 登录状态判断
+const isLoggedIn = computed(() => localStorage.getItem('token') !== null)
 const username = computed(() => localStorage.getItem('username') || '访客')
 
 // 退出登录逻辑
@@ -49,8 +60,17 @@ const handleLogout = () => {
 const activeIndex = computed(() =>
     router.currentRoute.value.meta.menuIndex || '0'
 )
-const handleSelect = (key: string, keyPath: string[]) => {
-  console.log(key, keyPath)
+
+const handleSelect = (key: string) => {
+  const pathMap = {
+    '0': '/user/home',
+    '1': '/user/blog',
+    '2': '/user/book',
+    '3-1': '/user/profile',
+    '4': '/login',
+    '5': '/register'
+  }
+  router.push(pathMap[key] || '/user/home')
 }
 </script>
 
@@ -84,5 +104,52 @@ const handleSelect = (key: string, keyPath: string[]) => {
   vertical-align: middle;
 }
 
+.flex-grow {
+  flex-grow: 1;
+}
+
+.custom-nav {
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  margin: 10px;
+}
+
+/* 菜单项悬停效果 */
+.custom-nav .el-menu-item:hover {
+  background-color: #f5f7fa !important;
+}
+
+/* 用户菜单样式 */
+.custom-nav .el-sub-menu {
+  top: 60px !important;
+}
+
+/* 登录注册按钮样式 */
+.el-menu-item:not(.is-active) {
+  color: #409eff !important;
+  transition: all 0.3s;
+}
+
+.el-menu-item:not(.is-active):hover {
+  color: #fff !important;
+  background-color: #409eff !important;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+  .el-menu {
+    flex-wrap: wrap;
+  }
+
+  .flex-grow {
+    display: none;
+  }
+
+  .el-menu-item {
+    width: 100% !important;
+    text-align: center;
+  }
+}
 
 </style>
