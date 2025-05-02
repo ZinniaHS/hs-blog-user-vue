@@ -2,8 +2,8 @@
   <div class="auth-container">
     <el-form :model="form" :rules="rules" ref="loginForm" class="auth-form">
       <h2 class="auth-title">用户登录</h2>
-      <el-form-item prop="username">
-        <el-input v-model="form.username" placeholder="用户名">
+      <el-form-item prop="email">
+        <el-input v-model="form.email" placeholder="用户名">
           <template #prefix>
             <el-icon><User /></el-icon>
           </template>
@@ -28,34 +28,38 @@
 
 <script setup>
 import { ref } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
+import router from '@/router'
 import request from '@/utils/request'
 import { ElMessage } from 'element-plus'
 
-const router = useRouter()
-const route = useRoute()
+const loginForm = ref(null)
 const form = ref({
-  username: '',
+  email: '',
   password: ''
 })
 const loading = ref(false)
 const rules = {
-  username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
+  email: [{ required: true, message: '请输入注册邮箱', trigger: 'blur' }],
   password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
 }
 
 const handleLogin = async () => {
   try {
+    console.log(form.value)
     await loginForm.value.validate()
     loading.value = true
-    const res = await request.post('/auth/login', form.value)
-    localStorage.setItem('token', res.data.token)
-    localStorage.setItem('username', form.value.username)
-    ElMessage.success('登录成功')
-    const redirect = route.query.redirect || '/user/home'
-    router.push(redirect)
+    const res = await request.post('/user/login', form.value)
+    console.log(res)
+    if(res.code === 1) {
+      localStorage.setItem('token', res.data)
+      localStorage.setItem('email', form.value.email)
+      ElMessage.success('登录成功')
+      router.push('/')
+    }else
+      ElMessage.error(res.msg)
   } catch (error) {
-    ElMessage.error(error.response?.data?.msg || '登录失败')
+    console.log(error)
+    ElMessage.error(error)
   } finally {
     loading.value = false
   }
