@@ -45,7 +45,6 @@ const rules = {
 
 const handleLogin = async () => {
   try {
-    console.log(form.value)
     await loginForm.value.validate()
     loading.value = true
     const res = await request.post('/user/login', form.value)

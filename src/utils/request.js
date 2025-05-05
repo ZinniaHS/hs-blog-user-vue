@@ -1,5 +1,7 @@
 import axios from "axios"
 import {ElMessage} from "element-plus";
+import router from "@/router/index.js";
+
 const request = axios.create({
     baseURL: 'http://localhost:8080',
     timeout:30000,//后台接口超时时间
@@ -8,7 +10,7 @@ const request = axios.create({
     }
 })
 //request 拦截器
-//可以自请求发送前对请求做一些处理
+//可以在请求发送前对请求做一些处理
 request.interceptors.request.use(config => {
     const token = localStorage.getItem('token');
     if (token) {

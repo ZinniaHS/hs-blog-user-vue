@@ -44,16 +44,38 @@
 import { ref, computed } from 'vue'
 import router from '@/router';
 import { useRouter } from 'vue-router'
+import request from '@/utils/request'
+import {ElMessage} from "element-plus";
 
 // 登录状态判断
 const isLoggedIn = computed(() => localStorage.getItem('token') !== null)
 const username = computed(() => localStorage.getItem('username') || '访客')
 
 // 退出登录逻辑
-const handleLogout = () => {
-  localStorage.removeItem('token')
-  localStorage.removeItem('username')
-  router.push('/login')
+const handleLogout =  () => {
+  try {
+    // 调用后端退出接口（假设接口路径为 /api/auth/logout）
+    request.post('/user/logout', {}, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('token')}`
+      }
+    }).then(res => {
+      localStorage.removeItem('token')
+      localStorage.removeItem('username')
+      if(res.code === 1)
+        ElMessage.success(res.data)
+      else
+        ElMessage.error(res.msg)
+    })
+    router.push('/login')
+  }catch (error) {
+    console.error('退出失败:', error)
+    // 异常情况下仍清理本地状态
+    localStorage.removeItem('token')
+    localStorage.removeItem('username')
+    router.push('/login')
+  }
+
 }
 
 // 激活当前选中的栏目
