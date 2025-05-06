@@ -1,5 +1,19 @@
 <template>
   <div class="auth-container">
+    <!-- 返回首页 -->
+    <el-tooltip content="返回hs-blog" placement="bottom" effect="light">
+      <div
+          class="auth-header"
+          @click="$router.push('/')"
+          @mouseenter="showTooltip = true"
+          @mouseleave="showTooltip = false"
+      >
+        <el-icon :size="20" color="#409EFF"><ArrowLeft /></el-icon>
+        <span class="header-text">hs-blog</span>
+      </div>
+    </el-tooltip>
+
+
     <el-form :model="form" :rules="rules" ref="registerForm" class="auth-form">
       <h2 class="auth-title">用户注册</h2>
 
@@ -92,7 +106,9 @@ import { ref, reactive, computed } from 'vue'
 import router from '@/router'
 import request from '@/utils/request'
 import { ElMessage } from 'element-plus'
-import {Message, Key} from "@element-plus/icons-vue";
+import {Message, Key, ArrowLeft} from "@element-plus/icons-vue";
+
+const showTooltip = ref(false)
 
 // 表单数据
 const form = reactive({
@@ -251,7 +267,39 @@ const isFormValid = computed(() => {
 </script>
 
 <style scoped>
-/* 完全继承Login.vue的样式 */
+
+.auth-container {
+  position: relative;
+  min-height: 100vh;
+}
+
+.auth-header {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  cursor: pointer;
+  transition: all 0.3s;
+  z-index: 100;
+}
+
+.auth-header:hover {
+  background: #f5f7fa;
+  transform: translateY(-2px);
+}
+
+.header-text {
+  font-size: 16px;
+  font-weight: 500;
+  color: #333;
+}
+
 .auth-container {
   display: flex;
   justify-content: center;

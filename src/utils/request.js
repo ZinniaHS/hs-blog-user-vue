@@ -49,7 +49,6 @@ request.interceptors.response.use(
                 return Promise.reject(new Error('数据解析异常'));
             }
         }
-        // 必须显式返回处理后的数据 ✅
         return res;
     },
     (error) => {
@@ -59,7 +58,8 @@ request.interceptors.response.use(
                 // 这里应该实现token刷新逻辑，暂时直接跳转登录
                 localStorage.removeItem('token')
                 ElMessage.error('身份验证失效，请重新登录')
-                router.push('/login')
+                const currentPath = router.currentRoute.value.fullPath
+                router.push(`/login?redirect=${encodeURIComponent(currentPath)}`)
             }
             return Promise.reject(error)
         } else if (error.response?.status === 500) {

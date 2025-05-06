@@ -23,7 +23,7 @@
     <template v-if="isLoggedIn">
       <el-sub-menu index="3">
         <template #title>欢迎您，{{ username }}</template>
-        <el-menu-item index="3-1">个人中心</el-menu-item>
+        <el-menu-item index="3-1" @click="$router.push('/user/profile')">个人中心</el-menu-item>
         <el-menu-item index="3-2" @click="handleLogout">退出登录</el-menu-item>
       </el-sub-menu>
     </template>
@@ -49,7 +49,10 @@ import {ElMessage} from "element-plus";
 
 // 登录状态判断
 const isLoggedIn = computed(() => localStorage.getItem('token') !== null)
-const username = computed(() => localStorage.getItem('username') || '访客')
+const username = computed(() => localStorage.getItem('email') || '访客')
+
+console.log(localStorage.getItem('token'))
+console.log(username.value)
 
 // 退出登录逻辑
 const handleLogout =  () => {
@@ -61,7 +64,7 @@ const handleLogout =  () => {
       }
     }).then(res => {
       localStorage.removeItem('token')
-      localStorage.removeItem('username')
+      localStorage.removeItem('email')
       if(res.code === 1)
         ElMessage.success(res.data)
       else
@@ -72,7 +75,7 @@ const handleLogout =  () => {
     console.error('退出失败:', error)
     // 异常情况下仍清理本地状态
     localStorage.removeItem('token')
-    localStorage.removeItem('username')
+    localStorage.removeItem('email')
     router.push('/login')
   }
 
