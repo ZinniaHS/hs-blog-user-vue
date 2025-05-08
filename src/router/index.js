@@ -50,6 +50,12 @@ const router = createRouter({
                     component: ()=>import( '../view/Blog.vue'),
                 },
                 {
+                    path: 'blogEdit',
+                    name: 'blogEdit',
+                    meta: {menuIndex: '1', title :'博客编辑'},
+                    component: ()=>import( '../view/BlogEdit.vue'),
+                },
+                {
                     path: 'book',
                     name: 'book',
                     meta: {menuIndex: '2', title :'图书馆'},
