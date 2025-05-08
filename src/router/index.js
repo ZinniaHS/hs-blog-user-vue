@@ -66,24 +66,24 @@ const router = createRouter({
     ]
 })
 
-router.beforeEach((to, from, next) => {
-    const token = localStorage.getItem('token')
-
-    if (to.matched.some(record => record.meta.requiresAuth)) {
-        if (!token) {
-            // 携带来源路径跳转到登录页
-            next({
-                path: '/login',
-                query: {
-                    redirect: to.fullPath // 记录原始访问路径
-                }
-            })
-        } else {
-            next()
-        }
-    } else {
-        next()
-    }
-})
+// router.beforeEach((to, from, next) => {
+//     const token = localStorage.getItem('token')
+//
+//     if (to.matched.some(record => record.meta.requiresAuth)) {
+//         if (!token) {
+//             // 携带来源路径跳转到登录页
+//             next({
+//                 path: '/login',
+//                 query: {
+//                     redirect: to.fullPath // 记录原始访问路径
+//                 }
+//             })
+//         } else {
+//             next()
+//         }
+//     } else {
+//         next()
+//     }
+// })
 
 export default router
