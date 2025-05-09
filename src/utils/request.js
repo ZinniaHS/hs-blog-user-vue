@@ -62,7 +62,12 @@ request.interceptors.response.use(
                 router.push(`/login?redirect=${encodeURIComponent(currentPath)}`)
             }
             return Promise.reject(error)
-        } else if (error.response?.status === 500) {
+        } else if (error.response?.status === 403) {
+            // localStorage.removeItem('token')
+            // ElMessage.error('身份验证失效，请重新登录')
+            // router.push('/login')
+        }
+        else if (error.response?.status === 500) {
             ElMessage.error('系统异常');
         }
         return Promise.reject(error);

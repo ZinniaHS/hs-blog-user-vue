@@ -19,7 +19,7 @@
             <nav class="nav-container">
               <div class="nav-section">
                 <el-menu vertical class="user-menu">
-                  <el-menu-item index="9">
+                  <el-menu-item index="9" @click="handleWriteBlog">
                     <el-icon><Notebook /></el-icon>
                     <span>写博客</span>
                   </el-menu-item>
@@ -82,10 +82,30 @@
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { ArrowDown, Notebook, Bell, Star, Search } from '@element-plus/icons-vue';
+import router from "@/router/index.js";
+import {ElMessage} from "element-plus";
 
-const handleSelect = (key) => {
-  console.log('选中项：', key);
-  // 这里添加路由跳转逻辑
+// 写博客功能需要登录
+const handleWriteBlog = () => {
+  const token = localStorage.getItem('token');
+
+  if (!token) {
+    // 未登录时显示提示并跳转到登录页
+    ElMessage.info("请先登录！");
+
+    // 获取干净的当前路径，避免重定向叠加
+    const currentPath = router.currentRoute.value.path;
+
+    router.push({
+      path: '/login',
+      query: {
+        redirect: currentPath
+      }
+    });
+  } else {
+    // 已登录时正常跳转
+    router.push({ name: 'blogEdit' });
+  }
 };
 
 // 功能区特殊样式

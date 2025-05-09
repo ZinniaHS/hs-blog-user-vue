@@ -49,12 +49,16 @@ const router = createRouter({
                     meta: {menuIndex: '1', title :'博客区'},
                     component: ()=>import( '../view/Blog.vue'),
                 },
-                {
-                    path: 'blogEdit',
-                    name: 'blogEdit',
-                    meta: {menuIndex: '1', title :'博客编辑'},
-                    component: ()=>import( '../view/BlogEdit.vue'),
-                },
+                    {
+                        path: 'blogEdit',
+                        name: 'blogEdit',
+                        meta: {
+                            menuIndex: '1',
+                            title: '博客编辑',
+                            requiresAuth: true // 添加认证标识
+                        },
+                        component: () => import('../view/BlogEdit.vue'),
+                    },
                 {
                     path: 'book',
                     name: 'book',
@@ -72,24 +76,25 @@ const router = createRouter({
     ]
 })
 
-// router.beforeEach((to, from, next) => {
-//     const token = localStorage.getItem('token')
-//
-//     if (to.matched.some(record => record.meta.requiresAuth)) {
-//         if (!token) {
-//             // 携带来源路径跳转到登录页
-//             next({
-//                 path: '/login',
-//                 query: {
-//                     redirect: to.fullPath // 记录原始访问路径
-//                 }
-//             })
-//         } else {
-//             next()
-//         }
-//     } else {
-//         next()
-//     }
-// })
+router.beforeEach((to, from, next) => {
+    const token = localStorage.getItem('token');
+
+    // 检查需要认证的路由
+    if (to.matched.some(record => record.meta.requiresAuth)) {
+        if (!token) {
+            // 未登录时跳转到登录页并携带重定向地址
+            next({
+                path: '/login',
+                query: {
+                    redirect: to.fullPath // 保留原始跳转路径
+                }
+            });
+        } else {
+            next(); // 已登录继续访问
+        }
+    } else {
+        next(); // 不需要认证的路由直接放行
+    }
+});
 
 export default router
