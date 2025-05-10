@@ -10,14 +10,37 @@
         <el-button type="primary" @click="saveDraft">保存草稿</el-button>
         <el-button type="primary" @click="postNewBlog">发布博客</el-button>
       </div>
-      <div class="title">
-        <span class="title-text">主标题</span>
-        <el-input v-model="BlogDTO.title" placeholder="Please input" />
+      <div>
+        <el-form>
+          <el-form-item label="主标题" prop="title" >
+            <el-input v-model="BlogDTO.title" />
+          </el-form-item>
+          <el-form-item label="副标题" prop="sub-title">
+            <el-input v-model="BlogDTO.subTitle" />
+          </el-form-item>
+          <p>指定投稿区</p>
+          <el-select
+              v-model="selectedCategory"
+              placeholder="请选择想要发布到的区"
+              style="width: 200px"
+          >
+            <el-option
+                v-for="item in category"
+                :key="item.id"
+                :label="item.name"
+                :value="item.id"
+            />
+          </el-select>
+        </el-form>
       </div>
-      <div class="sub-title">
-        <span class="title-text">副标题</span>
-        <el-input v-model="BlogDTO.subTitle" placeholder="Please input" />
-      </div>
+<!--      <div class="title">-->
+<!--        <span class="title-text">主标题</span>-->
+<!--        <el-input v-model="BlogDTO.title" placeholder="Please input" />-->
+<!--      </div>-->
+<!--      <div class="sub-title">-->
+<!--        <span class="title-text">副标题</span>-->
+<!--        <el-input v-model="BlogDTO.subTitle" placeholder="Please input" />-->
+<!--      </div>-->
     </template>
 
     <div class="editor-preview-layout" :class="{ 'preview-mode': isPreviewMode }">
@@ -35,11 +58,17 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import RichEditor from '@/components/RichEditor.vue'
 import router from "@/router/index.js";
+import request from "@/utils/request.js";
+// 当前选中的分类
+const selectedCategory = ref({})
 // 博客实体数据
 const BlogDTO = ref({})
+// 博客分类
+const category = ref({})
+// 博客正文
 const content = ref('<h2>新博客标题</h2><p>开始编写内容...</p>')
 const isPreviewMode = ref(false)
 // 点击保存草稿
@@ -47,6 +76,7 @@ const saveDraft = () => {
   BlogDTO.status = 0
   BlogDTO.value.content = content.value
   console.log('保存内容:', BlogDTO.value)
+  console.log(selectedCategory.value)
 }
 // 点击发布新博客
 const postNewBlog = () => {
@@ -56,6 +86,14 @@ const postNewBlog = () => {
 const togglePreview = () => {
   isPreviewMode.value = !isPreviewMode.value
 }
+
+onMounted(()=>{
+  request.get('/user/blogCategory/all')
+  .then(res => {
+    category.value = res.data
+    console.log(category.value)
+  })
+})
 </script>
 
 <style scoped>
