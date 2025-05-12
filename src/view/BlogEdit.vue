@@ -7,40 +7,57 @@
         <el-button @click="togglePreview">
           {{ isPreviewMode ? '关闭预览' : '预览效果' }}
         </el-button>
-        <el-button type="primary" @click="saveDraft">保存草稿</el-button>
-        <el-button type="primary" @click="postNewBlog">发布博客</el-button>
+        <el-button
+            type="primary"
+            @click="submitForm('draft')"
+            :disabled="!formValid"
+        >
+          保存草稿
+        </el-button>
+        <el-button
+            type="primary"
+            @click="submitForm('publish')"
+            :disabled="!formValid"
+        >
+          发布博客
+        </el-button>
       </div>
       <div>
-        <el-form>
-          <el-form-item label="主标题" prop="title" >
+        <el-form
+            :model="BlogDTO"
+            :rules="rules"
+            ref="formRef"
+            label-width="120px"
+        >
+          <el-form-item label="主标题" prop="title">
             <el-input v-model="BlogDTO.title" />
+            <div v-if="errors.title" class="error-text">{{ errors.title }}</div>
           </el-form-item>
-          <el-form-item label="副标题" prop="sub-title">
+
+          <el-form-item label="副标题" prop="subTitle">
             <el-input v-model="BlogDTO.subTitle" />
           </el-form-item>
-          <p>指定投稿区</p>
-          <el-select
-              v-model="selectedCategory"
-              placeholder="请选择想要发布到的区"
-              style="width: 200px"
-          >
-            <el-option
-                v-for="item in category"
-                :key="item.id"
-                :label="item.name"
-                :value="item.id"
-            />
-          </el-select>
+
+          <p>指定专栏</p>
+          <el-form-item label="投稿分类" prop="categoryId">
+            <el-select
+                v-model="BlogDTO.categoryId"
+                placeholder="请选择想要发布到的专栏"
+                style="width: 200px"
+                @change="handleCategoryChange"
+                :key="categoryKey"
+            >
+              <el-option
+                  v-for="item in category"
+                  :key="item.id"
+                  :label="item.name"
+                  :value="item.id"
+              />
+            </el-select>
+            <div v-if="errors.categoryId" class="error-text">{{ errors.categoryId }}</div>
+          </el-form-item>
         </el-form>
       </div>
-<!--      <div class="title">-->
-<!--        <span class="title-text">主标题</span>-->
-<!--        <el-input v-model="BlogDTO.title" placeholder="Please input" />-->
-<!--      </div>-->
-<!--      <div class="sub-title">-->
-<!--        <span class="title-text">副标题</span>-->
-<!--        <el-input v-model="BlogDTO.subTitle" placeholder="Please input" />-->
-<!--      </div>-->
     </template>
 
     <div class="editor-preview-layout" :class="{ 'preview-mode': isPreviewMode }">
@@ -58,46 +75,112 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, reactive, computed } from 'vue'
 import RichEditor from '@/components/RichEditor.vue'
 import router from "@/router/index.js";
 import request from "@/utils/request.js";
+import Blog from "@/view/Blog.vue";
+import {ElMessage} from "element-plus";
+
+const categoryKey = ref(0);
+// 表单引用
+const formRef = ref(null)
+// 错误信息
+const errors = reactive({
+  title: '',
+  categoryId: ''
+})
+// 校验规则
+const rules = reactive({
+  title: [
+    { required: true, message: '请输入主标题', trigger: 'blur' },
+    { min: 5, message: '标题不能少于5个字符', trigger: ['blur', 'input'] }
+  ],
+  categoryId: [
+    { required: true, message: '请选择投稿分类', trigger: 'change' }
+  ]
+})
+// 计算属性判断表单是否有效
+const formValid = computed(() => {
+  return !Object.values(errors).some(error => error)
+})
+// 验证表单数据是否完整
+// type区分是草稿还是发布
+const submitForm = (type) => {
+  formRef.value.validate().then(valid => {
+    if (valid) {
+      // 判断是发布还是保存草稿
+      let status = 1;
+      if(type === 'draft')
+        status = 0
+      console.log(BlogDTO.value)
+      console.log(content.value)
+      console.log(BlogDTO.value.categoryId)
+      request.post('/user/blog', {
+        title: BlogDTO.value.title,
+        subTitle: BlogDTO.value.subTitle,
+        content: content.value,
+        categoryId: BlogDTO.value.categoryId,
+        status: status
+      })
+      .then(res => {
+        if(res.code === 0)
+          ElMessage.error(res.msg)
+        else{
+          if(type === 'draft')
+            // 点击的是草稿按钮
+            ElMessage.success("已保存草稿")
+          else
+            // 点击的是发布按钮
+            ElMessage.success("发布成功")
+
+          router.back()
+        }
+      })
+      .catch(err => {
+        ElMessage.error(err)
+      })
+    }
+  }).catch(err => {
+    ElMessage.error("请完善博客信息！")
+  })
+}
 // 当前选中的分类
 const selectedCategory = ref({})
 // 博客实体数据
-const BlogDTO = ref({})
+const BlogDTO = ref({
+  title: '',
+  subTitle: '',
+  content: '',
+  categoryId: null,
+  status: 0
+});
 // 博客分类
 const category = ref({})
 // 博客正文
-const content = ref('<h2>新博客标题</h2><p>开始编写内容...</p>')
+const content = ref('<h2>请在此处输入...</h2>')
 const isPreviewMode = ref(false)
-// 点击保存草稿
-const saveDraft = () => {
-  BlogDTO.status = 0
-  BlogDTO.value.content = content.value
-  console.log('保存内容:', BlogDTO.value)
-  console.log(selectedCategory.value)
-}
-// 点击发布新博客
-const postNewBlog = () => {
-  console.log('保存内容:', content.value)
-}
 // 打开实时预览
 const togglePreview = () => {
   isPreviewMode.value = !isPreviewMode.value
 }
-
+// 初始化
 onMounted(()=>{
   request.get('/user/blogCategory/all')
   .then(res => {
     category.value = res.data
-    console.log(category.value)
+    categoryKey.value += 1;
   })
 })
 </script>
 
 <style scoped>
 
+.error-text {
+  color: #ff4d4f;
+  font-size: 12px;
+  margin-top: 4px;
+}
 .header-tools{
   margin-bottom: 20px;
 }
