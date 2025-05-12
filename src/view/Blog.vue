@@ -5,9 +5,14 @@
       <el-input
           v-model="searchKeyword"
           placeholder="搜索博客..."
-          suffix-icon="Search"
           style="width: 600px"
-      />
+          clearable
+          @keyup.enter="pageQuery">
+        <template #append>
+          <el-button :icon="Search" @click="pageQuery" />
+        </template>
+      </el-input>
+
     </div>
 
     <!-- 主内容区 -->
@@ -42,21 +47,35 @@
       <el-col :span="16" class="content-col">
         <div class="content-area">
           <el-card
-              v-for="blog in displayedBlogs"
+              v-for="blog in blogs.record"
               :key="blog.id"
               class="blog-card"
           >
             <h3>{{ blog.title }}</h3>
             <!-- 新增副标题 -->
-            <div class="blog-subtitle">{{ blog.subtitle }}</div>
+            <div class="blog-subtitle">{{ blog.subTitle }}</div>
             <div class="blog-meta">
-              <span>发布时间：{{ formatDate(blog.publishTime) }}</span>
+              <span>发布时间：{{ formatDate(blog.createTime) }}</span>
               <el-divider direction="vertical" />
-              <span>浏览量：{{ blog.views }}</span>
+              <span>收藏数：{{ blog.starCount }}</span>
               <el-divider direction="vertical" />
-              <span>评论：{{ blog.comments }}</span>
+              <span>浏览量：{{ blog.viewCount }}</span>
+<!--              <el-divider direction="vertical" />-->
+<!--              <span>评论：{{ blog.comments }}</span>-->
             </div>
           </el-card>
+          <!-- 分页 -->
+          <div class="pagination-wrapper">
+            <el-pagination
+                v-model:current-page="blogPageQueryDTO.pageNum"
+                v-model:page-size="blogPageQueryDTO.pageSize"
+                :page-sizes="[6, 10, 20]"
+                background
+                layout="total, sizes, prev, pager, next, jumper"
+                :total="blogs.total"
+                @size-change="handleSizeChange"
+                @current-change="handleCurrentChange"/>
+          </div>
         </div>
       </el-col>
 
@@ -80,10 +99,67 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
+import {ref, computed, onMounted, onBeforeUnmount, reactive, watch} from 'vue';
 import { ArrowDown, Notebook, Bell, Star, Search } from '@element-plus/icons-vue';
+import request from '@/utils/request'
 import router from "@/router/index.js";
 import {ElMessage} from "element-plus";
+
+// 搜索框中输入的内容
+const searchKeyword = ref('')
+// 当前展示的博客
+const blogs = reactive({
+  total: 0,
+  record: [],
+})
+// 分页查询
+const load = () =>{
+  request.get('/user/blog/page',{
+    params: {
+      pageNum: blogPageQueryDTO.pageNum,
+      pageSize: blogPageQueryDTO.pageSize,
+      keyWord: searchKeyword.value,
+    }
+  }).then((res) => {
+    blogs.total = res.data.total
+    blogs.record = res.data.records
+    console.log(blogs)
+  }).catch((err) => {
+    console.log(err)
+  })
+}
+// 点击搜索框后搜索数据
+const pageQuery = ()=>{
+  blogPageQueryDTO.keyWord = searchKeyword.value
+  load()
+}
+// 选择每页显示多少条记录时，触发分页查询
+const handleSizeChange = () =>{
+  load()
+}
+// 跳转其他页面的时候触发分页查询
+const handleCurrentChange = () =>{
+  load()
+}
+// 博客分页查询实体
+const blogPageQueryDTO = reactive({
+  pageNum: 1,
+  pageSize: 10,
+  keyWord: '',
+})
+// 当搜索框清空时，自动分页查询全部
+watch(searchKeyword, (newValue) => {
+  if (newValue === '') {
+    load() // 关键词为空时触发加载
+  }
+})
+
+
+
+
+
+
+
 
 // 写博客功能需要登录
 const handleWriteBlog = () => {
@@ -127,6 +203,7 @@ const handleClickOutside = (event) => {
 };
 
 onMounted(() => {
+  load()
   document.addEventListener('click', handleClickOutside);
 });
 
@@ -152,7 +229,6 @@ const allBlogs = ref([
   { id: 6, title: 'CSS技巧分享', type: '技术', publishTime: '2024-03-05', views: 1750, comments: 88 },
 ]);
 
-const searchKeyword = ref('');
 const selectedType = ref('all');
 const currentPage = ref(1);
 const pageSize = ref(6);
@@ -190,6 +266,7 @@ const displayedBlogs = computed(() => {
   const end = start + pageSize.value;
   return filteredBlogs.value.slice(start, end);
 });
+
 
 // 排行榜数据
 const topBlogs = computed(() => {

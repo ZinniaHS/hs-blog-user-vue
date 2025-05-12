@@ -197,8 +197,8 @@ const handleSendCaptcha = async () =>   {
     }
     // 发送验证码
     ElMessage.info("尝试发送验证码，请稍候...")
-    const valid = await registerForm.value.validateField('email')
-    console.log(valid)
+    // const valid = await registerForm.value.validateField('email')
+    // console.log(valid)
     isSending.value = true
     countdown.value = 60
     startCountdown()
