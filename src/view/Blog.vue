@@ -51,17 +51,25 @@
               :key="blog.id"
               class="blog-card"
           >
-            <h3>{{ blog.title }}</h3>
-            <!-- 新增副标题 -->
-            <div class="blog-subtitle">{{ blog.subTitle }}</div>
+            <!-- 标题 和 用户头像名称 -->
+            <div class="blog-header">
+              <h3>{{ blog.title }}</h3>
+              <div class="user-info">
+                <img :src="blog.userAvatar" class="user-avatar">
+                <span class="username">{{ blog.username }}</span>
+              </div>
+            </div>
+            <!--  副标题和分类标签  -->
+            <div class="blog-subtitle-container">
+              <div class="blog-subtitle">{{ blog.subTitle }}</div>
+              <el-tag type="primary" effect="dark">{{ blog.categoryName }}</el-tag>
+            </div>
             <div class="blog-meta">
-              <span>发布时间：{{ formatDate(blog.createTime) }}</span>
+              <span><el-icon><View /></el-icon>  {{ blog.viewCount }}</span>
               <el-divider direction="vertical" />
-              <span>收藏数：{{ blog.starCount }}</span>
+              <span><el-icon><Star /></el-icon>  {{ blog.starCount }}</span>
               <el-divider direction="vertical" />
-              <span>浏览量：{{ blog.viewCount }}</span>
-<!--              <el-divider direction="vertical" />-->
-<!--              <span>评论：{{ blog.comments }}</span>-->
+              <span class="ml-auto">发布时间：{{ formatDate(blog.createTime) }}</span>
             </div>
           </el-card>
           <!-- 分页 -->
@@ -295,6 +303,52 @@ const formatDate = (date) => {
 </script>
 
 <style scoped>
+.ml-auto {
+  margin-left: auto;
+}
+.blog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.username {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100px;
+  font-size: 0.9em;
+  color: #606266;
+}
+
+.blog-subtitle-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.blog-subtitle {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: calc(100% - 80px); /* 为标签预留空间 */
+}
+
 /* 整体容器 */
 .blog-container {
   max-width: 1200px;
@@ -467,5 +521,12 @@ const formatDate = (date) => {
 /* 按钮激活 */
 .type-btn.active .arrow-icon {
   transform: rotate(180deg);
+}
+
+.pagination-wrapper {
+  margin: 20px 0;
+  display: flex;
+  justify-content: center;
+  padding: 0 20px;
 }
 </style>
