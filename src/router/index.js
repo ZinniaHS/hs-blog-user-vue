@@ -49,16 +49,25 @@ const router = createRouter({
                     meta: {menuIndex: '1', title :'博客区'},
                     component: ()=>import( '../view/Blog.vue'),
                 },
-                    {
-                        path: 'blogEdit',
-                        name: 'blogEdit',
-                        meta: {
-                            menuIndex: '1',
-                            title: '博客编辑',
-                            requiresAuth: true // 添加认证标识
-                        },
-                        component: () => import('../view/BlogEdit.vue'),
+                {
+                    path: 'blogEdit',
+                    name: 'blogEdit',
+                    meta: {
+                        menuIndex: '1',
+                        title: '博客编辑',
+                        requiresAuth: true // 添加认证标识
                     },
+                    component: () => import('../view/BlogEdit.vue'),
+                },
+                {
+                    path: 'blogDetail',
+                    name: 'blogDetail',
+                    meta: {
+                        menuIndex: '1',
+                        title: '博客详情',
+                    },
+                    component: () => import('../view/BlogDetail.vue'),
+                },
                 {
                     path: 'book',
                     name: 'book',
@@ -70,6 +79,12 @@ const router = createRouter({
                     name: 'bookDetail',
                     meta: {menuIndex: '2', title :'图书详情'},
                     component: ()=>import( '../view/BookDetail.vue'),
+                },
+                {
+                    path: 'userDetail',
+                    name: 'userDetail',
+                    meta: {title :'用户详情'},
+                    component: ()=>import( '../view/UserDetail.vue'),
                 },
             ]
         },

@@ -53,8 +53,8 @@
           >
             <!-- 标题 和 用户头像名称 -->
             <div class="blog-header">
-              <h3>{{ blog.title }}</h3>
-              <div class="user-info">
+              <h3 @click="toBlogDetail(blog)">{{ blog.title }}</h3>
+              <div class="user-info" @click="toUserDetail">
                 <img :src="blog.userAvatar" class="user-avatar">
                 <span class="username">{{ blog.username }}</span>
               </div>
@@ -69,6 +69,7 @@
               <el-divider direction="vertical" />
               <span><el-icon><Star /></el-icon>  {{ blog.starCount }}</span>
               <el-divider direction="vertical" />
+              <span><el-icon><Pointer /></el-icon>  {{ blog.likeCount }}</span>
               <span class="ml-auto">发布时间：{{ formatDate(blog.createTime) }}</span>
             </div>
           </el-card>
@@ -115,11 +116,26 @@ import {ElMessage} from "element-plus";
 
 // 搜索框中输入的内容
 const searchKeyword = ref('')
+const selectedType = ref('all');
+const currentPage = ref(1);
+const pageSize = ref(6);
 // 当前展示的博客
 const blogs = reactive({
   total: 0,
   record: [],
 })
+// 进入博客详情页
+const toBlogDetail = (blog) =>{
+  router.push({
+    name: 'blogDetail',
+    query: {
+      id: blog.id,
+    }
+  })
+}
+const toUserDetail = () =>{
+  router.push({name: 'userDetail'})
+}
 // 分页查询
 const load = () =>{
   request.get('/user/blog/page',{
@@ -161,14 +177,6 @@ watch(searchKeyword, (newValue) => {
     load() // 关键词为空时触发加载
   }
 })
-
-
-
-
-
-
-
-
 // 写博客功能需要登录
 const handleWriteBlog = () => {
   const token = localStorage.getItem('token');
@@ -191,35 +199,29 @@ const handleWriteBlog = () => {
     router.push({ name: 'blogEdit' });
   }
 };
-
 // 功能区特殊样式
 const featureIconStyle = {
   purple: 'background-color: #8a5bf8; color: white; padding: 4px; border-radius: 50%;',
 };
-
 const showTypeList = ref(false);
-
 const toggleTypeList = () => {
   showTypeList.value = !showTypeList.value;
 };
-
 // 点击外部关闭列表
 const handleClickOutside = (event) => {
   if (!event.target.closest('.filter-panel')) {
     showTypeList.value = false;
   }
 };
-
+// 初始化
 onMounted(() => {
   load()
   document.addEventListener('click', handleClickOutside);
 });
-
 onBeforeUnmount(() => {
   document.removeEventListener('click', handleClickOutside);
 });
-
-// Mock数据
+// 模拟数据
 const allBlogs = ref([
   {
     id: 1,
@@ -236,11 +238,6 @@ const allBlogs = ref([
   { id: 5, title: '读书笔记', type: '生活', publishTime: '2024-03-08', views: 1200, comments: 56 },
   { id: 6, title: 'CSS技巧分享', type: '技术', publishTime: '2024-03-05', views: 1750, comments: 88 },
 ]);
-
-const selectedType = ref('all');
-const currentPage = ref(1);
-const pageSize = ref(6);
-
 // 获取所有类型
 const types = computed(() => {
   // 获取所有唯一类型
@@ -253,7 +250,6 @@ const types = computed(() => {
     })),
   ];
 });
-
 // 过滤博客
 const filteredBlogs = computed(() => {
   let result = allBlogs.value;
@@ -267,15 +263,12 @@ const filteredBlogs = computed(() => {
   }
   return result;
 });
-
 // 显示博客（分页处理）
 const displayedBlogs = computed(() => {
   const start = (currentPage.value - 1) * pageSize.value;
   const end = start + pageSize.value;
   return filteredBlogs.value.slice(start, end);
 });
-
-
 // 排行榜数据
 const topBlogs = computed(() => {
   return [...filteredBlogs.value]
@@ -283,26 +276,72 @@ const topBlogs = computed(() => {
       .slice(0, 5)
       .map((blog, index) => ({ ...blog, rank: index + 1 }));
 });
-
 // 方法
 const selectType = (type) => {
   selectedType.value = type;
 };
-
 const handlePageChange = (page) => {
   currentPage.value = page;
 };
-
 const handleDropdownVisibleChange = (visible) => {
   if (!visible) selectedType.value = 'all';
 };
-
 const formatDate = (date) => {
   return new Date(date).toLocaleDateString();
 };
 </script>
 
 <style scoped>
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+}
+/* 头像悬停效果 */
+.user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  transition:
+      transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+      box-shadow 0.3s ease;
+}
+.user-info:hover .user-avatar {
+  transform: scale(1.1) rotate(-2deg);
+  box-shadow: 0 4px 12px rgba(64, 158, 255, 0.3);
+}
+/* 用户名悬停效果 */
+.username {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100px;
+  font-size: 0.9em;
+  color: #606266;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.user-info:hover .username {
+  color: #409eff;
+  font-weight: 500;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+/* 联动效果增强 */
+.user-info:hover {
+  color: #409eff;
+}
+
+.blog-card h3 {
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+.blog-card h3:hover {
+  color: #409eff; /* Element Plus 的主题色 */
+  transform: scale(1.05);
+}
 .ml-auto {
   margin-left: auto;
 }
