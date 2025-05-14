@@ -81,10 +81,10 @@ const router = createRouter({
                     component: ()=>import( '../view/BookDetail.vue'),
                 },
                 {
-                    path: 'userDetail',
-                    name: 'userDetail',
+                    path: 'userProfile',
+                    name: 'userProfile',
                     meta: {title :'用户详情'},
-                    component: ()=>import( '../view/UserDetail.vue'),
+                    component: ()=>import( '../view/UserProfile.vue'),
                 },
             ]
         },

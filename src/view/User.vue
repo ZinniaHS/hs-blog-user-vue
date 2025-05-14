@@ -23,7 +23,7 @@
     <template v-if="isLoggedIn">
       <el-sub-menu index="3">
         <template #title>欢迎您，{{ username }}</template>
-        <el-menu-item index="3-1" @click="$router.push('/user/profile')">个人中心</el-menu-item>
+        <el-menu-item index="3-1" @click="toProfile">个人中心</el-menu-item>
         <el-menu-item index="3-2" @click="handleLogout">退出登录</el-menu-item>
       </el-sub-menu>
     </template>
@@ -53,7 +53,6 @@ const username = computed(() => localStorage.getItem('email') || '访客')
 
 console.log(localStorage.getItem('token'))
 console.log(username.value)
-
 // 退出登录逻辑
 const handleLogout =  () => {
   try {
@@ -80,12 +79,10 @@ const handleLogout =  () => {
   }
 
 }
-
 // 激活当前选中的栏目
 const activeIndex = computed(() =>
     router.currentRoute.value.meta.menuIndex || '0'
 )
-
 const handleSelect = (key: string) => {
   const pathMap = {
     '0': '/user/home',
@@ -96,6 +93,15 @@ const handleSelect = (key: string) => {
     '5': '/register'
   }
   router.push(pathMap[key] || '/user/home')
+}
+// 去个人详情页
+const toProfile = () =>{
+  router.push({
+    name: 'userProfile',
+    query: {
+      id: -1
+    }
+  })
 }
 </script>
 

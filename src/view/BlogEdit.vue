@@ -9,14 +9,14 @@
         </el-button>
         <el-button
             type="primary"
-            @click="submitForm('draft')"
+            @click="postBlog('draft')"
             :disabled="!formValid"
         >
           保存草稿
         </el-button>
         <el-button
             type="primary"
-            @click="submitForm('publish')"
+            @click="postBlog('publish')"
             :disabled="!formValid"
         >
           发布博客
@@ -80,7 +80,7 @@ import RichEditor from '@/components/RichEditor.vue'
 import router from "@/router/index.js";
 import request from "@/utils/request.js";
 import Blog from "@/view/Blog.vue";
-import {ElMessage} from "element-plus";
+import {ElMessage, ElNotification} from "element-plus";
 
 const categoryKey = ref(0);
 // 表单引用
@@ -106,7 +106,7 @@ const formValid = computed(() => {
 })
 // 验证表单数据是否完整
 // type区分是草稿还是发布
-const submitForm = (type) => {
+const postBlog = (type) => {
   formRef.value.validate().then(valid => {
     if (valid) {
       // 判断是发布还是保存草稿
@@ -127,13 +127,20 @@ const submitForm = (type) => {
         if(res.code === 0)
           ElMessage.error(res.msg)
         else{
-          if(type === 'draft')
+          if(type === 'draft'){
             // 点击的是草稿按钮
             ElMessage.success("已保存草稿")
+            ElNotification.success({
+              title: 'Success',
+              message: '已保存草稿，可以在右上角个人中心页面中，找到我的草稿继续完善！',
+              offset: 100,
+            })
+          }
+
+
           else
             // 点击的是发布按钮
             ElMessage.success("发布成功")
-
           router.back()
         }
       })

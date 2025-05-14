@@ -54,7 +54,7 @@
             <!-- 标题 和 用户头像名称 -->
             <div class="blog-header">
               <h3 @click="toBlogDetail(blog)">{{ blog.title }}</h3>
-              <div class="user-info" @click="toUserDetail">
+              <div class="user-info" @click="toUserDetail(blog)">
                 <img :src="blog.userAvatar" class="user-avatar">
                 <span class="username">{{ blog.username }}</span>
               </div>
@@ -67,9 +67,9 @@
             <div class="blog-meta">
               <span><el-icon><View /></el-icon>  {{ blog.viewCount }}</span>
               <el-divider direction="vertical" />
-              <span><el-icon><Star /></el-icon>  {{ blog.starCount }}</span>
-              <el-divider direction="vertical" />
               <span><el-icon><Pointer /></el-icon>  {{ blog.likeCount }}</span>
+              <el-divider direction="vertical" />
+              <span><el-icon><Star /></el-icon>  {{ blog.starCount }}</span>
               <span class="ml-auto">发布时间：{{ formatDate(blog.createTime) }}</span>
             </div>
           </el-card>
@@ -133,8 +133,12 @@ const toBlogDetail = (blog) =>{
     }
   })
 }
-const toUserDetail = () =>{
-  router.push({name: 'userDetail'})
+const toUserDetail = (blog) =>{
+  router.push({
+    name: 'userProfile',
+    query: {
+      id: blog.userId,
+    }})
 }
 // 分页查询
 const load = () =>{

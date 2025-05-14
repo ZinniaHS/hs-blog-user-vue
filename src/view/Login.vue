@@ -30,7 +30,7 @@
         </el-input>
       </el-form-item>
       <el-form-item>
-        <el-button type="primary" :loading="loading" @click="handleLogin" style="width: 100%">登录</el-button>
+        <el-button type="primary" :loading="loading" @keyup.enter="handleLogin" @click="handleLogin" style="width: 100%">登录</el-button>
       </el-form-item>
       <div class="auth-tips">
         <p>还没有账号？ <el-link @click="$router.push('/register')">立即注册</el-link></p>

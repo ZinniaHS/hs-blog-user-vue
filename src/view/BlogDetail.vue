@@ -6,8 +6,8 @@
       <el-affix :offset-top="0">
         <div class="author-info">
           <div class="author-avatar-name">
-            <img class="avatar" src="https://via.placeholder.com/50" alt="博主头像">
-            <h3 class="name">cuiqwei</h3>
+            <img class="avatar" :src="blog.userAvatar" alt="博主头像">
+            <h3 class="name">{{blog.username}}</h3>
           </div>
           <div class="stats">
             <div class="stat-item"><span class="number">23</span>原创</div>
@@ -46,11 +46,11 @@
         <h1 class="main-title">{{blog.title}}</h1>
         <div class="sub-title">
           <span class="tag">原创</span>
-          <span class="author-name">cuiqwei</span>
-          <span class="publish-time">已于 2023-11-23 18:24:45 发布</span>
-          <span class="views-count">阅读量10w+</span>
-          <span class="likes-count">收藏 1.9w</span>
-          <span class="comments-count">点赞数 3.2k</span>
+          <span class="author-name">{{blog.username}}</span>
+          <span class="publish-time">已于 {{blog.createTime}} 发布</span>
+          <span class="views-count"><el-icon><View /></el-icon> 阅读量{{blog.viewCount}}</span>
+          <span class="comments-count"><el-icon><Pointer /></el-icon> 点赞数{{blog.likeCount}}</span>
+          <span class="likes-count"><el-icon><Star /></el-icon> 收藏数{{blog.starCount}}</span>
         </div>
       </div>
 
@@ -65,13 +65,13 @@
         <el-affix :offset-bottom="0">
           <div class="bottom-author-info">
             <div class="author-info">
-              <img class="small-avatar" src="https://via.placeholder.com/30" alt="博主头像">
-              <span class="author-name">cuiqwei</span>
+              <img class="small-avatar" :src="blog.userAvatar" alt="博主头像">
+              <span class="author-name">{{blog.username}}</span>
             </div>
             <div class="interaction-buttons">
-              <el-button type="primary" icon="el-icon-thumb" circle></el-button>
-              <el-button icon="el-icon-message" circle></el-button>
-              <el-button icon="el-icon-share" circle></el-button>
+              <el-button type="primary" circle></el-button>
+              <el-button circle></el-button>
+              <el-button circle></el-button>
             </div>
           </div>
         </el-affix>
@@ -309,13 +309,16 @@ const showBlogDetail = async (id) => {
     }
 
     .bottom-author-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
       position: absolute;
-      width: calc(100% - 20px * 2); // 减去左右padding
+      width: calc(100% - 20px * 2);
       bottom: 0;
-      left: 20px;  // 对齐父容器padding-left
-      right: 20px; // 对齐父容器padding-right
-      padding: 10px 0; // 保持内部间距
-      margin: -20 -20px; // 抵消父容器padding
+      left: 20px;
+      right: 20px;
+      padding: 10px 0;
+      margin: -20 -20px;
       box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
       border-radius: 8px 8px 0 0;
       overflow-x: hidden;
@@ -339,6 +342,7 @@ const showBlogDetail = async (id) => {
 
       .interaction-buttons {
         display: flex;
+        justify-content: flex-end; // 关键修改
 
         button {
           margin-left: 10px;
