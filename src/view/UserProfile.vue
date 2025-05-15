@@ -4,11 +4,11 @@
     <div class="user-header">
       <div class="user-info-container">
         <div class="user-avatar-section">
-          <el-avatar :size="80" :src="userInfo.avatar"></el-avatar>
+          <el-avatar :size="80" :src="userInfo.avatarUrl"></el-avatar>
         </div>
         <div class="user-details-section">
           <div class="user-name-section">
-            <h2>{{ userInfo.name }}</h2>
+            <h2>{{ userInfo.username }}</h2>
             <div class="follow-action">
               <el-button size="small" plain round>已关注</el-button>
               <el-button type="text" icon="More" class="more-actions"></el-button>
@@ -16,37 +16,34 @@
           </div>
           <div class="user-stats">
             <div class="stat-item">
-              <div class="stat-value">{{ formatNumber(userInfo.visits) }}</div>
+              <div class="stat-value">{{ userInfo.totalBlogs }}</div>
+              <div class="stat-label">原创</div>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat-item">
+              <div class="stat-value">{{ userInfo.totalLikes }}</div>
+              <div class="stat-label">获赞</div>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat-item">
+              <div class="stat-value">{{ userInfo.totalFollowers }}</div>
+              <div class="stat-label">粉丝</div>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat-item">
+              <div class="stat-value">{{ userInfo.totalViews }}</div>
               <div class="stat-label">总访问量</div>
             </div>
             <div class="stat-divider"></div>
 
             <div class="stat-item">
-              <div class="stat-value">{{ userInfo.articles }}</div>
-              <div class="stat-label">原创</div>
-            </div>
-            <div class="stat-divider"></div>
-
-            <div class="stat-item">
-              <div class="stat-value">{{ formatNumber(userInfo.rank) }}</div>
+              <div class="stat-value">统计中</div>
               <div class="stat-label">排名</div>
-            </div>
-            <div class="stat-divider"></div>
-
-            <div class="stat-item">
-              <div class="stat-value">{{ formatNumber(userInfo.followers) }}</div>
-              <div class="stat-label">粉丝</div>
-            </div>
-            <div class="stat-divider"></div>
-
-            <div class="stat-item">
-              <div class="stat-value">{{ userInfo.likes }}</div>
-              <div class="stat-label">获赞</div>
             </div>
           </div>
 
           <div class="user-bio">
-            <div>个人简介：{{ userInfo.bio }}</div>
+            <div>个人简介：{{ userInfo.description }}</div>
           </div>
         </div>
       </div>
@@ -66,7 +63,7 @@
       <div class="main-content">
         <div class="tabs-wrapper">
           <el-tabs v-model="activeTab" class="demo-tabs">
-            <el-tab-pane :label="`文章${userInfo.articles}`" name="articles"></el-tab-pane>
+            <el-tab-pane label="文章" name="articles"></el-tab-pane>
             <el-tab-pane label="关注" name="interactions"></el-tab-pane>
             <el-tab-pane label="收藏" name="favorites"></el-tab-pane>
             <el-tab-pane label="我的草稿" name="drafts" v-if="isMyPage === true"></el-tab-pane>
@@ -91,7 +88,7 @@
                 <div class="article-desc">{{ article.subTitle }}</div>
                 <div class="article-meta">
                   <el-tag size="small" type="success" effect="plain">原创</el-tag>
-                  <span class="publish-info">发布于博客 {{ article.createTime }}</span>
+                  <span class="publish-info">博客创建于 {{ article.createTime }}</span>
                   <span class="article-stats">
                   <span>{{ article.viewCount }} 阅读</span>
                   <span>{{ article.likeCount }} 点赞</span>
@@ -102,25 +99,23 @@
               </div>
             </div>
           </template>
+
           <!-- 草稿区 -->
           <template v-if="activeTab === 'drafts' && isMyPage === true">
             <!-- 用户提供的草稿内容 -->
-            <div v-for="(article, index) in articles.value" :key="index" class="article-item">
-              <div class="article-title">{{ article.title }}</div>
-              <div class="article-desc">{{ article.description }}</div>
+            <div v-for="(draft, index) in draftBlogs" :key="index" class="article-item">
+              <div class="article-title">{{ draft.title }}</div>
+              <div class="article-desc">{{ draft.subTitle }}</div>
               <div class="article-meta">
-                <el-tag size="small" type="success" effect="plain">原创</el-tag>
-                <el-tag size="small" type="info" effect="plain">置顶</el-tag>
-                <span class="publish-info">发布于博客 {{ article.publishDate }}</span>
+                <span class="publish-info">博客创建于 {{ draft.createTime }}</span>
                 <span class="article-stats">
-                  <span>{{ article.views }} 阅读</span>
-                  <span>{{ article.likes }} 点赞</span>
-                  <span>{{ article.comments }} 评论</span>
-                  <span>{{ article.favorites }} 收藏</span>
+                  <span>{{ draft.viewCount }} 阅读</span>
+                  <span>{{ draft.likeCount }} 点赞</span>
+                  <span>{{ draft.starCount }} 收藏</span>
+                  <!--<span>{{ article.comments }} 评论</span>-->
                 </span>
               </div>
             </div>
-
                 <!-- 分页组件绑定草稿分页参数 -->
 <!--                <div class="pagination-wrapper">-->
 <!--                  <el-pagination-->
@@ -160,86 +155,16 @@ const trueId = ref()
 const activeTab = ref('articles');
 // 判断当前是否为自己的页面
 const isMyPage = ref();
-// 初始化
-onMounted(async () => {
-  // 首先判断是否为自己的页面
-  await verifyIfIsMyself(currentId.value);
-  console.log(trueId.value)
-  console.log(isMyPage.value)
-  // 查询文章，已经发布的博客称为 article文章
-  if (activeTab.value === 'articles') {
-    getArticles(trueId.value)
-  }
-  // 草稿博客
-  if (activeTab.value === 'drafts') {
-    fetchDrafts();
-  }
-})
-
-// 判断是不是自己的页面，因为某些组件是自己页面才渲染的
-const verifyIfIsMyself  = async (currentId) =>{
-  // const res = await request.post('/user/verifyIfIsMyself', null, {
-  //   params:{
-  //     id : currentId
-  //   }
-  // })
-  // // code为1说明是自己的页面
-  // if(res.code === 1) {
-  //   isMyPage.value = true
-  //   trueId.value = res.data
-  // }else{
-  //   // 否则为他人页面，不渲染一些组件
-  //   isMyPage.value = false
-  //   trueId.value = res.msg
-  // }
-
-  try {
-    const res = await request.get(`/user/getUserInfoById?id=${currentId}`, {});
-    userInfo.value = res.data;
-    isMyPage.value = res.data.myPage;
-    trueId.value = res.data.id;
-    return trueId.value; // 返回trueId值
-  } catch (error) {
-    console.error("获取用户信息失败", error);
-  }
-}
-
-const getArticles = async (trueId) => {
-  request.get(`/user/blog/queryAllBlogsByUserId/${trueId}`,{
-  }).then((res) => {
-    console.log(res);
-    articles.value = res.data.records
-    console.log(articles.value)
-  })
-}
-
-// 新增草稿数据
-const draftBlogs = ref([])
-
-const draftPageQueryDTO = ref({
+// 分页查询DTO
+const blogPageQueryForOneDTO = ref({
   pageNum: 1,
-  pageSize: 6
+  pageSize: 6,
+  keyWords: '',
+  // 创建时间排序
+  createTimeOrder: '',
+  // 浏览量排序
+  viewCountOrder: ''
 });
-
-// 获取草稿数据的方法
-const fetchDrafts = () => {
-  // 这里应该调用API，示例使用静态数据
-  draftBlogs.value = [
-    {
-      id: 1,
-      title: '草稿标题1',
-      subTitle: '草稿副标题',
-      userAvatar: '',
-      username: '草稿用户',
-      categoryName: '技术',
-      viewCount: 100,
-      likeCount: 5,
-      starCount: 2,
-      createTime: new Date().toISOString()
-    }
-  ];
-};
-
 // 博主信息
 const userInfo = ref({
   name: 'Evan-Nightly',
@@ -259,33 +184,81 @@ const userInfo = ref({
     shares: 55440
   }
 });
-
 // 所有已发布的博客article
-const articles = ref([
-  {
-    title: '【前端主题】一：写给入坑前端的你',
-    description: '来吧伙计们，一起真正揭懂前端。',
-    publishDate: '2021.02.18',
-    views: 6597,
-    likes: 46,
-    comments: 18,
-    favorites: 79
-  },
-  {
-    title: 'Vue + Spring Boot 项目实战（一）：项目简介',
-    description: '白卷是一款使用Vue+Spring Boot 开发的前后端分离项目，主要帮助 web 开发初学者通过实践方式打通各个环节的知识。',
-    publishDate: '2019.03.31',
-    views: 628350,
-    likes: 2225,
-    comments: 245,
-    favorites: 14448
+const articles = ref([]);
+// 新增草稿数据
+const draftBlogs = ref([])
+
+// 初始化
+onMounted(async () => {
+  console.log('currentId: '+currentId.value)
+  // 首先判断是否为自己的页面
+  await verifyIfIsMyself(currentId.value);
+  // console.log(trueId.value)
+  // console.log(isMyPage.value)
+  // 查询文章，已经发布的博客称为 article文章
+  getArticles(trueId.value)
+  // 草稿博客
+  getDrafts(trueId.value);
+})
+// 判断是不是自己的页面，因为某些组件是自己页面才渲染的
+const verifyIfIsMyself  = async (currentId) =>{
+  try {
+    await request.get(`/user/getUserInfoById?id=${currentId}`, {}).then((res) => {
+      console.log(res)
+      userInfo.value = res.data;
+      isMyPage.value = res.data.myPage;
+      trueId.value = res.data.id;
+      return trueId.value; // 返回trueId值
+    });
+  } catch (error) {
+    console.error("获取用户信息失败", error);
   }
-]);
+}
+// 获取文章区内容
+const getArticles = async (trueId) => {
+  request.get('/user/blog/queryAllBlogsByUserId',{
+    params:{
+      userId: trueId,
+      type: 'article',
+      pageNum: 1,
+      pageSize: 6,
+      keyWords: '',
+      // 创建时间排序
+      createTimeOrder: '',
+      // 浏览量排序
+      viewCountOrder: ''
+    }
+  }).then((res) => {
+    articles.value = res.data.records
+  })
+}
+// 获取草稿数据的方法
+const getDrafts = (trueId) => {
+  request.get('/user/blog/queryAllBlogsByUserId',{
+    params:{
+      userId: trueId,
+      type: 'draft',
+      pageNum: 1,
+      pageSize: 6,
+      keyWords: '',
+      // 创建时间排序
+      createTimeOrder: '',
+      // 浏览量排序
+      viewCountOrder: ''
+    }
+  }).then((res) => {
+    // console.log(res);
+    draftBlogs.value = res.data.records
+    // console.log(draftBlogs.value)
+  })
+};
+
 
 // Format large numbers with commas
-function formatNumber(num) {
-  return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-}
+// function formatNumber(num) {
+//   return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+// }
 </script>
 
 <style scoped>

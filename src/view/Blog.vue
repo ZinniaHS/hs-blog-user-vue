@@ -23,19 +23,30 @@
           <div class="sidebar-nav">
             <nav class="nav-container">
               <div class="nav-section">
-                <el-menu vertical class="user-menu">
-                  <el-menu-item index="9" @click="handleWriteBlog">
-                    <el-icon><Notebook /></el-icon>
-                    <span>写博客</span>
-                  </el-menu-item>
-                  <el-menu-item index="10">
-                    <el-icon><Bell /></el-icon>
-                    <span>我的订阅</span>
-                  </el-menu-item>
-                  <el-menu-item index="11">
-                    <el-icon><Star /></el-icon>
-                    <span>我的收藏</span>
-                  </el-menu-item>
+                <el-menu
+                    vertical
+                    class="user-menu"
+                    v-model="selectedIndex"
+                @select="handleMenuSelect"
+                >
+                <el-menu-item index="9" @click="handleWriteBlog">
+                  <el-icon><Notebook /></el-icon>
+                  <span>写博客</span>
+                </el-menu-item>
+                <el-menu-item index="10">
+                  <!-- 动态图标 -->
+                  <el-icon>
+                    <component :is="selectedIndex === '10' ? BellFilled : Bell" />
+                  </el-icon>
+                  <span>我的关注</span>
+                </el-menu-item>
+                <el-menu-item index="11">
+                  <!-- 动态图标 -->
+                  <el-icon>
+                    <component :is="selectedIndex === '11' ? StarFilled : Star" />
+                  </el-icon>
+                  <span>我的收藏</span>
+                </el-menu-item>
                 </el-menu>
               </div>
             </nav>
@@ -109,13 +120,15 @@
 
 <script setup>
 import {ref, computed, onMounted, onBeforeUnmount, reactive, watch} from 'vue';
-import { ArrowDown, Notebook, Bell, Star, Search } from '@element-plus/icons-vue';
+import {ArrowDown, Notebook, Bell, Star, Search, BellFilled, StarFilled} from '@element-plus/icons-vue';
 import request from '@/utils/request'
 import router from "@/router/index.js";
 import {ElMessage} from "element-plus";
 
 // 搜索框中输入的内容
 const searchKeyword = ref('')
+// 当前左侧选择区选中的项目
+const selectedIndex = ref('')
 const selectedType = ref('all');
 const currentPage = ref(1);
 const pageSize = ref(6);
@@ -124,6 +137,10 @@ const blogs = reactive({
   total: 0,
   record: [],
 })
+// 选中左侧功能区项目后触发
+const handleMenuSelect = (index) => {
+  selectedIndex.value = index
+}
 // 进入博客详情页
 const toBlogDetail = (blog) =>{
   router.push({
@@ -133,6 +150,7 @@ const toBlogDetail = (blog) =>{
     }
   })
 }
+// 进入用户详情页
 const toUserDetail = (blog) =>{
   router.push({
     name: 'userProfile',
