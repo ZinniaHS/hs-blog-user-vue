@@ -12,7 +12,7 @@
             @click="postBlog('draft')"
             :disabled="!formValid"
         >
-          保存草稿
+          保存修改
         </el-button>
         <el-button
             type="primary"
@@ -20,6 +20,19 @@
             :disabled="!formValid"
         >
           发布博客
+        </el-button>
+        <el-button
+            type="danger"
+            @click="deleteBlog"
+        >
+          <span v-if="BlogDTO.id">删除</span>
+          <span v-else>弃用草稿</span>
+        </el-button>
+        <el-button
+            type="info"
+            @click="resetForm"
+        >
+          <span>重置表单</span>
         </el-button>
       </div>
       <div>
@@ -63,12 +76,12 @@
     <div class="editor-preview-layout" :class="{ 'preview-mode': isPreviewMode }">
       <!-- 编辑区域始终存在 -->
       <div class="editor-area" :class="{ 'full-width': !isPreviewMode }">
-        <RichEditor v-model="content" />
+        <RichEditor v-model="BlogDTO.content" />
       </div>
 
       <!-- 预览区域仅在预览模式下显示 -->
       <div v-if="isPreviewMode" class="preview-area">
-        <div class="preview-box" v-html="content"></div>
+        <div class="preview-box" v-html="BlogDTO.content"></div>
       </div>
     </div>
   </el-card>
@@ -78,9 +91,13 @@
 import { ref, onMounted, reactive, computed } from 'vue'
 import RichEditor from '@/components/RichEditor.vue'
 import router from "@/router/index.js";
+import {useRoute} from "vue-router";
 import request from "@/utils/request.js";
 import Blog from "@/view/Blog.vue";
 import {ElMessage, ElNotification} from "element-plus";
+
+// 从路由中获得博客id
+const BlogId = useRoute().query.id
 
 const categoryKey = ref(0);
 // 表单引用
@@ -106,6 +123,7 @@ const formValid = computed(() => {
 })
 // 验证表单数据是否完整
 // type区分是草稿还是发布
+// 修改或保存
 const postBlog = (type) => {
   formRef.value.validate().then(valid => {
     if (valid) {
@@ -113,10 +131,11 @@ const postBlog = (type) => {
       let status = 1;
       if(type === 'draft')
         status = 0
-      console.log(BlogDTO.value)
-      console.log(content.value)
-      console.log(BlogDTO.value.categoryId)
-      request.post('/user/blog', {
+      // console.log(BlogDTO.value)
+      // console.log(content.value)
+      // console.log(BlogDTO.value.categoryId)
+      request.put('/user/blog', {
+        id: BlogDTO.value.id,
         title: BlogDTO.value.title,
         subTitle: BlogDTO.value.subTitle,
         content: content.value,
@@ -136,8 +155,6 @@ const postBlog = (type) => {
               offset: 100,
             })
           }
-
-
           else
             // 点击的是发布按钮
             ElMessage.success("发布成功")
@@ -156,29 +173,76 @@ const postBlog = (type) => {
 const selectedCategory = ref({})
 // 博客实体数据
 const BlogDTO = ref({
+  id: null,
   title: '',
   subTitle: '',
-  content: '',
+  content: '<h2>请在此处输入...</h2>',
   categoryId: null,
   status: 0
 });
 // 博客分类
 const category = ref({})
+// 获取博客分类
+const getBlogCategory = () =>{
+  request.get('/user/blogCategory/all')
+      .then(res => {
+        category.value = res.data
+        categoryKey.value += 1;
+      })
+}
 // 博客正文
 const content = ref('<h2>请在此处输入...</h2>')
+// 是否为预览模式
 const isPreviewMode = ref(false)
 // 打开实时预览
 const togglePreview = () => {
   isPreviewMode.value = !isPreviewMode.value
 }
 // 初始化
-onMounted(()=>{
-  request.get('/user/blogCategory/all')
-  .then(res => {
-    category.value = res.data
-    categoryKey.value += 1;
-  })
+onMounted(async ()=>{
+  // 获取博客分类
+  getBlogCategory()
+  // 如果是重新编辑博客或草稿，则回显博客信息
+  if(BlogId)
+    await showBlogDetail(BlogId)
+  console.log(BlogDTO.value)
 })
+// 回显博客信息
+const showBlogDetail = async (id) => {
+  try {
+    await request.get('/user/blog/'+id,{
+    }).then((res) => {
+      BlogDTO.value = res.data
+    })
+  }catch(err) {
+    console.log(err)
+  }
+}
+// 删除草稿/博客
+const deleteBlog = () =>{
+  if(BlogId===undefined){
+    resetForm()
+    router.back()
+    ElMessage.info("已放弃草稿")
+  }
+  else{
+    request.delete('/user/blog/',{
+      params: {
+        id: BlogId,
+      }
+    }).then(res => {
+      ElMessage.success("已删除")
+    })
+  }
+}
+// 重置页面
+const resetForm = () => {
+  BlogDTO.value.title = ''
+  BlogDTO.value.subTitle = ''
+  BlogDTO.value.content = '<h2>请在此处输入...</h2>'
+  BlogDTO.value.categoryId = null
+  BlogDTO.value.status = 0
+}
 </script>
 
 <style scoped>

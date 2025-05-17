@@ -89,7 +89,7 @@ import {useRoute} from "vue-router";
 
 // 从路由中获得博客id
 const BlogId = useRoute().query.id
-// 图书详情
+// 博客详情
 const blog = ref({
   title: '',
   subtitle: '',

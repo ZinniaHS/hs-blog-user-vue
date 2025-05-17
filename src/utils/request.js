@@ -67,7 +67,7 @@ request.interceptors.response.use(
             localStorage.removeItem('token')
             localStorage.removeItem('email')
             ElMessage.error('身份验证失效，请重新登录')
-            router.push('/login')
+            // router.push('/login')
         }
         else if (error.response?.status === 500) {
             ElMessage.error('系统异常');

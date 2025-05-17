@@ -160,6 +160,7 @@ const toUserDetail = (blog) =>{
 }
 // 分页查询
 const load = () =>{
+  console.log('keyword:   '+searchKeyword.value)
   request.get('/user/blog/page',{
     params: {
       pageNum: blogPageQueryDTO.pageNum,

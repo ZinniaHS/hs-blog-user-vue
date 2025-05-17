@@ -84,11 +84,11 @@
           <template v-if="activeTab === 'articles'">
             <div class="articles-list">
               <div v-for="(article, index) in articles" :key="index" class="article-item">
-                <div class="article-title">{{ article.title }}</div>
+                <div class="article-title" @click="toBlogDetail(article)">{{ article.title }}</div>
                 <div class="article-desc">{{ article.subTitle }}</div>
                 <div class="article-meta">
                   <el-tag size="small" type="success" effect="plain">原创</el-tag>
-                  <span class="publish-info">博客创建于 {{ article.createTime }}</span>
+                  <span class="publish-info">博客创建于 {{ article.createTime.replace('T', ' ') }}</span>
                   <span class="article-stats">
                   <span>{{ article.viewCount }} 阅读</span>
                   <span>{{ article.likeCount }} 点赞</span>
@@ -104,14 +104,14 @@
           <template v-if="activeTab === 'drafts' && isMyPage === true">
             <!-- 用户提供的草稿内容 -->
             <div v-for="(draft, index) in draftBlogs" :key="index" class="article-item">
-              <div class="article-title">{{ draft.title }}</div>
+              <div class="article-title" @click="toBlogEdit(draft)">{{ draft.title }}</div>
               <div class="article-desc">{{ draft.subTitle }}</div>
               <div class="article-meta">
-                <span class="publish-info">博客创建于 {{ draft.createTime }}</span>
+                <span class="publish-info">博客创建于 {{ draft.createTime.replace('T', ' ') }}</span>
                 <span class="article-stats">
-                  <span>{{ draft.viewCount }} 阅读</span>
-                  <span>{{ draft.likeCount }} 点赞</span>
-                  <span>{{ draft.starCount }} 收藏</span>
+<!--                  <span>{{ draft.viewCount }} 阅读</span>-->
+<!--                  <span>{{ draft.likeCount }} 点赞</span>-->
+<!--                  <span>{{ draft.starCount }} 收藏</span>-->
                   <!--<span>{{ article.comments }} 评论</span>-->
                 </span>
               </div>
@@ -145,6 +145,7 @@ import {
 } from '@element-plus/icons-vue';
 import {useRoute} from "vue-router";
 import {ElNotification} from "element-plus";
+import router from "@/router/index.js";
 import request from "@/utils/request.js";
 
 // 从路由中获得此页面的博主id（还需要验证是否为本人页）
@@ -195,7 +196,7 @@ onMounted(async () => {
   // 首先判断是否为自己的页面
   await verifyIfIsMyself(currentId.value);
   // console.log(trueId.value)
-  // console.log(isMyPage.value)
+  console.log(isMyPage.value)
   // 查询文章，已经发布的博客称为 article文章
   getArticles(trueId.value)
   // 草稿博客
@@ -250,11 +251,26 @@ const getDrafts = (trueId) => {
   }).then((res) => {
     // console.log(res);
     draftBlogs.value = res.data.records
-    // console.log(draftBlogs.value)
   })
 };
-
-
+// 进入博客详情页
+const toBlogDetail = (blog) =>{
+  router.push({
+    name: 'blogDetail',
+    query: {
+      id: blog.id,
+    }
+  })
+}
+// 进入博客编辑页
+const toBlogEdit = (blog) =>{
+  router.push({
+    name: 'blogEdit',
+    query: {
+      id: blog.id,
+    }
+  })
+}
 // Format large numbers with commas
 // function formatNumber(num) {
 //   return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
