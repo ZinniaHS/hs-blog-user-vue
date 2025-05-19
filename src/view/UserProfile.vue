@@ -1,6 +1,6 @@
 <template>
   <div class="user-profile-container">
-    <!-- Header section with user info -->
+    <!-- 博主信息区 -->
     <div class="user-header">
       <div class="user-info-container">
         <div class="user-avatar-section">
@@ -10,8 +10,9 @@
           <div class="user-name-section">
             <h2>{{ userInfo.username }}</h2>
             <div class="follow-action">
-              <el-button size="small" plain round>已关注</el-button>
-              <el-button type="text" icon="More" class="more-actions"></el-button>
+              <el-button v-if="!isMyPage" size="small" plain round>已关注</el-button>
+              <el-button v-else size="small" plain round @click="toUserDetail">编辑资料</el-button>
+<!--              <el-button type="text" icon="More" class="more-actions"></el-button>-->
             </div>
           </div>
           <div class="user-stats">
@@ -49,8 +50,9 @@
       </div>
     </div>
 
-    <!-- Content section with tabs -->
+    <!-- 下方内容区 -->
     <div class="user-content">
+      <!--   侧边热门文章区   -->
       <div class="sidebar">
         <div class="hot-articles">
           <h4 class="section-title">热门文章</h4>
@@ -59,7 +61,7 @@
           </div>
         </div>
       </div>
-
+      <!--   主内容区   -->
       <div class="main-content">
         <div class="tabs-wrapper">
           <el-tabs v-model="activeTab" class="demo-tabs">
@@ -82,13 +84,16 @@
 
           <!-- 文章区 -->
           <template v-if="activeTab === 'articles'">
+            <div v-if="articles.total === 0 && activeTab === 'articles'" class="no-articles">
+              博主暂时没有文章
+            </div>
             <div class="articles-list">
-              <div v-for="(article, index) in articles" :key="index" class="article-item">
+              <div v-for="(article, index) in articles.record" v-if="articles.record.length" :key="index" class="article-item">
                 <div class="article-title" @click="toBlogDetail(article)">{{ article.title }}</div>
                 <div class="article-desc">{{ article.subTitle }}</div>
                 <div class="article-meta">
                   <el-tag size="small" type="success" effect="plain">原创</el-tag>
-                  <span class="publish-info">博客创建于 {{ article.createTime.replace('T', ' ') }}</span>
+                  <span class="publish-info">博客创建于 {{ article.createTime }}</span>
                   <span class="article-stats">
                   <span>{{ article.viewCount }} 阅读</span>
                   <span>{{ article.likeCount }} 点赞</span>
@@ -98,46 +103,58 @@
                 </div>
               </div>
             </div>
+            <!-- 分页组件绑定草稿分页参数 -->
+            <div class="pagination-wrapper">
+              <el-pagination
+                  v-model:current-page="articlePageQueryDTO.pageNum"
+                  v-model:page-size="articlePageQueryDTO.pageSize"
+                  :page-sizes="[3, 6, 10, 20]"
+                  background
+                  layout="total, sizes, prev, pager, next, jumper"
+                  :total="articles.total"
+                  @size-change="handleArticleSizeChange"
+                  @current-change="handleArticleCurrentChange"/>
+            </div>
           </template>
 
           <!-- 草稿区 -->
           <template v-if="activeTab === 'drafts' && isMyPage === true">
+            <div v-if="draftBlogs.total === 0 && activeTab === 'drafts'" class="no-articles">
+              博主暂时没有文章
+            </div>
             <!-- 用户提供的草稿内容 -->
-            <div v-for="(draft, index) in draftBlogs" :key="index" class="article-item">
+            <div v-for="(draft, index) in draftBlogs" v-if="draftBlogs.record.length" :key="index" class="article-item">
               <div class="article-title" @click="toBlogEdit(draft)">{{ draft.title }}</div>
               <div class="article-desc">{{ draft.subTitle }}</div>
               <div class="article-meta">
-                <span class="publish-info">博客创建于 {{ draft.createTime.replace('T', ' ') }}</span>
+                <span class="publish-info">博客创建于 {{ draft.createTime }}</span>
                 <span class="article-stats">
-<!--                  <span>{{ draft.viewCount }} 阅读</span>-->
-<!--                  <span>{{ draft.likeCount }} 点赞</span>-->
-<!--                  <span>{{ draft.starCount }} 收藏</span>-->
-                  <!--<span>{{ article.comments }} 评论</span>-->
                 </span>
               </div>
             </div>
-                <!-- 分页组件绑定草稿分页参数 -->
-<!--                <div class="pagination-wrapper">-->
-<!--                  <el-pagination-->
-<!--                      v-model:current-page="draftPageQueryDTO.pageNum"-->
-<!--                      v-model:page-size="draftPageQueryDTO.pageSize"-->
-<!--                      :page-sizes="[6, 10, 20]"-->
-<!--                      background-->
-<!--                      layout="total, sizes, prev, pager, next, jumper"-->
-<!--                      :total="draftBlogs.length"-->
-<!--                      @size-change="draftPageQueryDTO.pageSize = $event"-->
-<!--                      @current-change="draftPageQueryDTO.pageNum = $event"/>-->
-<!--                </div>-->
+            <!-- 分页组件绑定草稿分页参数 -->
+            <div class="pagination-wrapper">
+              <el-pagination
+                  v-model:current-page="draftPageQueryDTO.pageNum"
+                  v-model:page-size="draftPageQueryDTO.pageSize"
+                  :page-sizes="[6, 10, 20]"
+                  background
+                  layout="total, sizes, prev, pager, next, jumper"
+                  :total="draftBlogs.total"
+                  @size-change="handleDraftSizeChange"
+                  @current-change="handleDraftCurrentChange"/>
+            </div>
           </template>
 
         </div>
       </div>
     </div>
+
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import {ref, onMounted, reactive} from 'vue';
 import {
   Star, Medal, Trophy, ArrowDown, GoodsFilled,
   ChatDotRound, Share, TrendCharts, Connection,
@@ -150,46 +167,60 @@ import request from "@/utils/request.js";
 
 // 从路由中获得此页面的博主id（还需要验证是否为本人页）
 const currentId = ref(useRoute().query.id)
-// 此页真正id
+// 进入此页用户的id
 const trueId = ref()
 // 当前选中的标签页
 const activeTab = ref('articles');
 // 判断当前是否为自己的页面
 const isMyPage = ref();
-// 分页查询DTO
-const blogPageQueryForOneDTO = ref({
+// 文章区分页查询DTO
+const articlePageQueryDTO = ref({
   pageNum: 1,
-  pageSize: 6,
+  pageSize: 3,
   keyWords: '',
   // 创建时间排序
   createTimeOrder: '',
   // 浏览量排序
-  viewCountOrder: ''
+  viewCountOrder: '',
+});
+// 文章区分页查询DTO
+const draftPageQueryDTO = ref({
+  pageNum: 1,
+  pageSize: 3,
+  keyWords: '',
+  // 创建时间排序
+  createTimeOrder: '',
+  // 浏览量排序
+  viewCountOrder: '',
 });
 // 博主信息
-const userInfo = ref({
-  name: 'Evan-Nightly',
-  avatar: 'https://picsum.photos/seed/picsum/200/300',
-  codeYears: 7,
-  visits: 2865699,
-  articles: 74,
-  rank: 906033,
-  followers: 29574,
-  likes: 151,
-  bio: '才华一般，徒有奇志。',
-  location: '天津市',
-  achievements: {
-    likes: 9108,
-    comments: 4086,
-    favorites: 27031,
-    shares: 55440
-  }
-});
+const userInfo = ref({});
 // 所有已发布的博客article
-const articles = ref([]);
+const articles = reactive({
+  total: 0,
+  record: [],
+});
 // 新增草稿数据
-const draftBlogs = ref([])
-
+const draftBlogs = reactive({
+  total: 0,
+  record: [],
+});
+// 选择每页显示多少条记录时，触发分页查询
+const handleArticleSizeChange = () =>{
+  getArticles(trueId.value)
+}
+// 跳转其他页面的时候触发分页查询
+const handleArticleCurrentChange = () =>{
+  getArticles(trueId.value)
+}
+// 选择每页显示多少条记录时，触发分页查询
+const handleDraftSizeChange = () =>{
+  getDrafts(trueId.value)
+}
+// 跳转其他页面的时候触发分页查询
+const handleDraftCurrentChange = () =>{
+  getDrafts(trueId.value)
+}
 // 初始化
 onMounted(async () => {
   console.log('currentId: '+currentId.value)
@@ -222,16 +253,18 @@ const getArticles = async (trueId) => {
     params:{
       userId: trueId,
       type: 'article',
-      pageNum: 1,
-      pageSize: 6,
-      keyWords: '',
+      pageNum: articlePageQueryDTO.value.pageNum,
+      pageSize: articlePageQueryDTO.value.pageSize,
+      keyWords: articlePageQueryDTO.value.keyWords,
       // 创建时间排序
       createTimeOrder: '',
       // 浏览量排序
       viewCountOrder: ''
     }
   }).then((res) => {
-    articles.value = res.data.records
+    console.log(res)
+    articles.record = res.data.records
+    articles.total = res.data.total
   })
 }
 // 获取草稿数据的方法
@@ -240,9 +273,9 @@ const getDrafts = (trueId) => {
     params:{
       userId: trueId,
       type: 'draft',
-      pageNum: 1,
-      pageSize: 6,
-      keyWords: '',
+      pageNum: draftPageQueryDTO.value.pageNum,
+      pageSize: draftPageQueryDTO.value.pageSize,
+      keyWords: draftPageQueryDTO.value.keyWords,
       // 创建时间排序
       createTimeOrder: '',
       // 浏览量排序
@@ -250,7 +283,8 @@ const getDrafts = (trueId) => {
     }
   }).then((res) => {
     // console.log(res);
-    draftBlogs.value = res.data.records
+    draftBlogs.record = res.data.records
+    draftBlogs.total = res.data.total
   })
 };
 // 进入博客详情页
@@ -271,10 +305,15 @@ const toBlogEdit = (blog) =>{
     }
   })
 }
-// Format large numbers with commas
-// function formatNumber(num) {
-//   return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-// }
+// 进入用户资料编辑页
+const toUserDetail = () =>{
+  router.push({
+    name: 'userDetail',
+    query: {
+      id: trueId.value,
+    }
+  })
+}
 </script>
 
 <style scoped>
@@ -545,5 +584,11 @@ const toBlogEdit = (blog) =>{
 .article-stats {
   display: flex;
   gap: 15px;
+}
+
+.pagination-wrapper {
+  margin: 20px 0;
+  display: flex;
+  padding: 0 20px;
 }
 </style>

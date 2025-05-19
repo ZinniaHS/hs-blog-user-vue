@@ -14,7 +14,6 @@
       </el-input>
 
     </div>
-
     <!-- 主内容区 -->
     <el-row :gutter="20" class="main-content">
       <!-- 左侧内容选择 -->
@@ -53,7 +52,6 @@
           </div>
         </el-affix>
       </el-col>
-
       <!-- 中间内容区 -->
       <el-col :span="16" class="content-col">
         <div class="content-area">
@@ -98,7 +96,6 @@
           </div>
         </div>
       </el-col>
-
       <!-- 右侧排行榜 -->
       <el-col :span="4" class="ranking-col">
         <div class="ranking-panel">
@@ -136,6 +133,12 @@ const pageSize = ref(6);
 const blogs = reactive({
   total: 0,
   record: [],
+})
+// 博客分页查询实体
+const blogPageQueryDTO = reactive({
+  pageNum: 1,
+  pageSize: 10,
+  keyWord: '',
 })
 // 选中左侧功能区项目后触发
 const handleMenuSelect = (index) => {
@@ -188,12 +191,7 @@ const handleSizeChange = () =>{
 const handleCurrentChange = () =>{
   load()
 }
-// 博客分页查询实体
-const blogPageQueryDTO = reactive({
-  pageNum: 1,
-  pageSize: 10,
-  keyWord: '',
-})
+
 // 当搜索框清空时，自动分页查询全部
 watch(searchKeyword, (newValue) => {
   if (newValue === '') {

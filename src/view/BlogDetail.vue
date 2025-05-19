@@ -5,17 +5,19 @@
       <!-- 博主信息区域 -->
       <el-affix :offset-top="0">
         <div class="author-info">
-          <div class="author-avatar-name">
-            <img class="avatar" :src="blog.userAvatar" alt="博主头像">
-            <h3 class="name">{{blog.username}}</h3>
+          <div class="author-avatar-name" @click="toUserDetail">
+            <img class="avatar" :src="userInfo.avatarUrl" alt="博主头像">
+            <h3 class="name">{{userInfo.username}}</h3>
           </div>
           <div class="stats">
-            <div class="stat-item"><span class="number">23</span>原创</div>
-            <div class="stat-item"><span class="number">3879</span>点赞</div>
-            <div class="stat-item"><span class="number">2万+</span>收藏</div>
-            <div class="stat-item"><span class="number">2084</span>粉丝</div>
+            <div class="stat-item"><span class="number">{{userInfo.totalBlogs}}</span>原创</div>
+            <div class="stat-item"><span class="number">{{userInfo.totalLikes}}</span>点赞</div>
+<!--            <div class="stat-item"><span class="number">{{userInfo.totalStars}}</span>收藏</div>-->
+            <div class="stat-item"><span class="number">{{userInfo.totalFollowers}}</span>粉丝</div>
+            <div class="stat-item"><span class="number">{{userInfo.totalViews}}</span>总浏览数</div>
           </div>
-          <el-button class="follow-btn" type="primary">+ 关注</el-button>
+          <el-button v-if="!isMyPage" class="follow-btn" type="primary">+ 关注</el-button>
+          <el-button v-else class="toMyDetail-btn" @click="toUserDetail" >进入我的主页</el-button>
         </div>
       </el-affix>
 
@@ -89,28 +91,80 @@ import {useRoute} from "vue-router";
 
 // 从路由中获得博客id
 const BlogId = useRoute().query.id
+// 当前博主id
+const userId = ref('')
+// 判断是否为当前登录账号的页面
+const isMyPage = ref(false)
+// 这篇博客博主的信息
+const userInfo = ref({})
 // 博客详情
 const blog = ref({
   title: '',
   subtitle: '',
 })
 // 初始化
-onMounted(() => {
-  console.log(BlogId)
-  showBlogDetail(BlogId)
+onMounted( async() => {
+  await showBlogDetail(BlogId)
+  // await verifyIfIsMyself()
 })
-
+// 获取博客详情
 const showBlogDetail = async (id) => {
   request.get('/user/blog/'+id,{
   }).then((res) => {
     blog.value = res.data
-    console.log(blog.value)
+    userId.value = res.data.userId
+    verifyIfIsMyself()
   })
+}
+// 判断是不是自己的页面，因为某些组件是自己页面才渲染的
+const verifyIfIsMyself  = async () =>{
+  try {
+    await request.get('/user/getUserInfoById?id='+userId.value, {}).then((res) => {
+      userInfo.value = res.data;
+      isMyPage.value = res.data.myPage;
+      console.log(userInfo.value)
+    });
+  } catch (error) {
+    console.error("获取用户信息失败", error);
+  }
+}
+// 进入用户详情页
+const toUserDetail = () =>{
+  router.push({
+    name: 'userProfile',
+    query: {
+      id: userId.value,
+    }})
 }
 
 </script>
 
 <style scoped lang="scss">
+.author-avatar-name {
+  display: flex;
+  align-items: center;
+  margin-bottom: 15px;
+  transition: all 0.3s ease; // 添加平滑过渡效果
+
+  &:hover {
+    cursor: pointer; // 悬停时显示手型光标
+    color: #409eff; // 悬停时文字颜色变化
+    transform: scale(1.05); // 悬停时轻微放大
+  }
+
+  .avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    margin-right: 10px;
+  }
+
+  .name {
+    font-size: 18px;
+    color: #333;
+    font-weight: bold;
+  }
+}
 .blog-detail-container {
   display: flex;
   height: calc(100vh - 60px);
@@ -175,6 +229,11 @@ const showBlogDetail = async (id) => {
         margin-top: 15px;
         background-color: #409eff;
         color: white;
+      }
+
+      .toMyDetail-btn{
+        width: 180px;
+        margin-top: 15px;
       }
     }
 

@@ -87,7 +87,6 @@ const addToBookshelf = () => {
     console.log('加入书架操作')
   }
 }
-
 const BookId = useRoute().query.id
 // 图书详情
 const book = ref({})
@@ -99,16 +98,13 @@ const showDetail = (id) => {
     console.log(book)
   })
 }
-
 // 进入页面查询图书详情
 onMounted(() => {
   showDetail(BookId)
 })
-
 const formatWordCount = (count) => {
   return `${(count / 10000).toFixed(1)}万字`
 }
-
 </script>
 
 <style scoped>

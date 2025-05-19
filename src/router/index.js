@@ -86,6 +86,12 @@ const router = createRouter({
                     meta: {title :'用户详情'},
                     component: ()=>import( '../view/UserProfile.vue'),
                 },
+                {
+                    path: 'userDetail',
+                    name: 'userDetail',
+                    meta: {title :'用户资料页'},
+                    component: ()=>import( '../view/userDetail.vue'),
+                },
             ]
         },
     ]

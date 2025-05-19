@@ -94,7 +94,7 @@ import router from "@/router/index.js";
 import {useRoute} from "vue-router";
 import request from "@/utils/request.js";
 import Blog from "@/view/Blog.vue";
-import {ElMessage, ElNotification} from "element-plus";
+import {ElMessage, ElMessageBox, ElNotification} from "element-plus";
 
 // 从路由中获得博客id
 const BlogId = useRoute().query.id
@@ -220,18 +220,27 @@ const showBlogDetail = async (id) => {
 }
 // 删除草稿/博客
 const deleteBlog = () =>{
+  console.log(BlogId)
   if(BlogId===undefined){
     resetForm()
     router.back()
     ElMessage.info("已放弃草稿")
   }
   else{
-    request.delete('/user/blog/',{
-      params: {
-        id: BlogId,
-      }
-    }).then(res => {
-      ElMessage.success("已删除")
+    ElMessageBox.confirm(
+        '确定要删除吗？',
+        'Warning',
+        {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning',
+        }
+    ).then(() => {
+      request.delete('/user/blog/'+BlogId,{
+      }).then(res => {
+        ElMessage.success("已删除")
+        router.back()
+      })
     })
   }
 }
