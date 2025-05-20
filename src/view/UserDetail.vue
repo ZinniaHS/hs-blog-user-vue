@@ -155,7 +155,7 @@ const handleUploadError = (err: any) => {
 };
 // 初始化
 onMounted(async () => {
-  getUserDetail()
+  await getUserDetail()
 })
 
 // 获取用户信息

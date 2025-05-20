@@ -90,7 +90,7 @@ import router from "@/router/index.js";
 import {useRoute} from "vue-router";
 
 // 从路由中获得博客id
-const BlogId = useRoute().query.id
+const BlogId = Number(useRoute().query.id)
 // 当前博主id
 const userId = ref('')
 // 判断是否为当前登录账号的页面
@@ -104,8 +104,10 @@ const blog = ref({
 })
 // 初始化
 onMounted( async() => {
+  // 博客浏览量+1
+  await incrementViewCount()
+  // 展示博客详情
   await showBlogDetail(BlogId)
-  // await verifyIfIsMyself()
 })
 // 获取博客详情
 const showBlogDetail = async (id) => {
@@ -127,6 +129,14 @@ const verifyIfIsMyself  = async () =>{
   } catch (error) {
     console.error("获取用户信息失败", error);
   }
+}
+// 博客浏览量+1
+const incrementViewCount = async () => {
+  request.post('/user/blog/incrementViewCount/'+BlogId, {})
+  .then((res) => {})
+  .catch((err) => {
+    console.log(err)
+  })
 }
 // 进入用户详情页
 const toUserDetail = () =>{

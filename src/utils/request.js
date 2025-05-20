@@ -53,20 +53,20 @@ request.interceptors.response.use(
     },
     (error) => {
         if (error.response?.status === 401) {
-            if (!isRefreshing) {
-                isRefreshing = true
-                // 这里应该实现token刷新逻辑，暂时直接跳转登录
-                localStorage.removeItem('token')
-                localStorage.removeItem('email')
-                ElMessage.error('身份验证失效，请重新登录')
-                const currentPath = router.currentRoute.value.fullPath
-                router.push(`/login?redirect=${encodeURIComponent(currentPath)}`)
-            }
-            return Promise.reject(error)
+            // if (!isRefreshing) {
+            //     isRefreshing = true
+            //     // 这里应该实现token刷新逻辑，暂时直接跳转登录
+            //     localStorage.removeItem('token')
+            //     localStorage.removeItem('email')
+            //     ElMessage.error('身份验证失效，请重新登录')
+            //     const currentPath = router.currentRoute.value.fullPath
+            //     router.push(`/login?redirect=${encodeURIComponent(currentPath)}`)
+            // }
+            // return Promise.reject(error)
         } else if (error.response?.status === 403) {
-            localStorage.removeItem('token')
-            localStorage.removeItem('email')
-            ElMessage.error('身份验证失效，请重新登录')
+            // localStorage.removeItem('token')
+            // localStorage.removeItem('email')
+            // ElMessage.error('身份验证失效，请重新登录')
             // router.push('/login')
         }
         else if (error.response?.status === 500) {
