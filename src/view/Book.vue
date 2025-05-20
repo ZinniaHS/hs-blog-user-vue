@@ -145,7 +145,7 @@ const isActive = ref(false);
 // 全部类型是否展开
 const isTypeMenuVisible = ref(false)
 // 默认一级菜单选中全部
-const selectedFirst = ref('all')
+const selectedFirst = ref(0);
 // 二级菜单初始值
 const selectedSecond = ref('')
 // 得到目前选中一级菜单下的二级菜单的值
@@ -172,36 +172,27 @@ function getAllCategory() {
       .then(res => {
         const data = res.data
 
-        firstLevelOptions.value = [{ value: 'all', label: '全部' }]
-        Object.keys(secondLevelMap).forEach(key => delete secondLevelMap[key])
+        firstLevelOptions.value = [{ value: 0, label: '全部' }]; // 原为 'all'
 
         data.forEach(category => {
           firstLevelOptions.value.push({
-            value: String(category.id),
+            value: category.id, // 确保是数值类型
             label: category.name
-          })
+          });
 
           if (Array.isArray(category.children) && category.children.length > 0) {
-            // 添加"全部"选项到子分类前面
             const childrenWithAll = [
-              {
-                value: 'all',
-                label: '全部',
-                // 保持与后端接口一致的字段名
-                id: 'all',
-                name: '全部'
-              },
-              ...category.children
-            ].map(child => ({
-              value: child.id === 'all' ? 'all' : String(child.id),
-              label: child.name
-            }))
-
-            secondLevelMap[String(category.id)] = childrenWithAll
+              { value: 0, label: '全部' }, // 二级菜单的“全部”也改为0
+              ...category.children.map(child => ({
+                value: child.id, // 确保子分类ID是数值
+                label: child.name
+              }))
+            ];
+            secondLevelMap[String(category.id)] = childrenWithAll;
           } else {
-            secondLevelMap[String(category.id)] = [{ value: 'all', label: '全部' }]
+            secondLevelMap[String(category.id)] = [{ value: 0, label: '全部' }];
           }
-        })
+        });
       })
       .catch(err => {
         console.log(err)
@@ -227,21 +218,17 @@ function getSelectedCategoryBooks(firstId, secondId) {
 // 点击一级菜单选项后触发
 function handleFirstLevelClick(value) {
   if (selectedFirst.value !== value) {
-    selectedFirst.value = value
-    selectedSecond.value = value === 'all' ? '' : 'all'
+    selectedFirst.value = value;
+    selectedSecond.value = value === 0 ? 0 : 0; // 根据后端逻辑调整
   }
-  if (value === 'all') selectedSecond.value = ''
-
-  // value值是categoryId
-  getSelectedCategoryBooks(value,0)
+  // 传递正确的参数类型
+  getSelectedCategoryBooks(value === 0 ? 0 : value, 0);
 }
 // 点击二级菜单选项后触发
 function handleSecondLevelClick(value) {
-  selectedSecond.value = value
-  if(value === 'all')
-    getSelectedCategoryBooks(selectedFirst.value,0)
-  else
-    getSelectedCategoryBooks(selectedFirst.value,value)
+  selectedSecond.value = value;
+  const secondId = value === 0 ? 0 : value;
+  getSelectedCategoryBooks(selectedFirst.value, secondId);
 }
 // 获取当前选中的类型
 const getSelectedText = computed(() => {
