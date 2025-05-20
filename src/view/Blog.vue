@@ -107,7 +107,7 @@
           >
             <div class="ranking-number">{{ blog.rank }}</div>
             <h4>{{ blog.title }}</h4>
-            <div class="views-count">{{ blog.views }} 次浏览</div>
+            <div class="views-count">{{ blog.viewCount }} 次浏览</div>
           </el-card>
         </div>
       </el-col>
@@ -163,7 +163,6 @@ const toUserDetail = (blog) =>{
 }
 // 分页查询
 const load = () =>{
-  console.log('keyword:   '+searchKeyword.value)
   request.get('/user/blog/page',{
     params: {
       pageNum: blogPageQueryDTO.pageNum,
@@ -173,7 +172,6 @@ const load = () =>{
   }).then((res) => {
     blogs.total = res.data.total
     blogs.record = res.data.records
-    console.log(blogs)
   }).catch((err) => {
     console.log(err)
   })
@@ -236,7 +234,10 @@ const handleClickOutside = (event) => {
 };
 // 初始化
 onMounted(() => {
+  // 分页查询博客
   load()
+  // 获取Top5浏览量的博客
+  getTopFiveBlog()
   document.addEventListener('click', handleClickOutside);
 });
 onBeforeUnmount(() => {
@@ -259,6 +260,16 @@ const allBlogs = ref([
   { id: 5, title: '读书笔记', type: '生活', publishTime: '2024-03-08', views: 1200, comments: 56 },
   { id: 6, title: 'CSS技巧分享', type: '技术', publishTime: '2024-03-05', views: 1750, comments: 88 },
 ]);
+// 获取Top5浏览量的博客
+const getTopFiveBlog = () =>{
+  request.get('/user/blog/getTopFiveBlog',{
+  }).then((res) => {
+    console.log(res)
+    topBlogs.value = res.data
+  }).catch((err) => {
+    console.log(err)
+  })
+}
 // 获取所有类型
 const types = computed(() => {
   // 获取所有唯一类型
@@ -291,12 +302,7 @@ const displayedBlogs = computed(() => {
   return filteredBlogs.value.slice(start, end);
 });
 // 排行榜数据
-const topBlogs = computed(() => {
-  return [...filteredBlogs.value]
-      .sort((a, b) => b.views - a.views)
-      .slice(0, 5)
-      .map((blog, index) => ({ ...blog, rank: index + 1 }));
-});
+const topBlogs = ref({})
 // 方法
 const selectType = (type) => {
   selectedType.value = type;
