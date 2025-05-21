@@ -71,9 +71,8 @@
               <span class="author-name">{{blog.username}}</span>
             </div>
             <div class="interaction-buttons">
-              <el-button type="primary" circle></el-button>
-              <el-button circle></el-button>
-              <el-button circle></el-button>
+              <el-button circle @click="incrementLikeCount"><el-icon><CaretTop /></el-icon></el-button>
+              <el-button circle @click="incrementStarCount"><el-icon><Star /></el-icon></el-button>
             </div>
           </div>
         </el-affix>
@@ -88,6 +87,7 @@ import {reactive, ref, onMounted, computed } from 'vue'
 import request from '@/utils/request'
 import router from "@/router/index.js";
 import {useRoute} from "vue-router";
+import {ElMessage} from "element-plus";
 
 // 从路由中获得博客id
 const BlogId = Number(useRoute().query.id)
@@ -108,6 +108,8 @@ onMounted( async() => {
   await incrementViewCount()
   // 展示博客详情
   await showBlogDetail(BlogId)
+
+  getLikeAndStarStatus()
 })
 // 获取博客详情
 const showBlogDetail = async (id) => {
@@ -146,7 +148,36 @@ const toUserDetail = () =>{
       id: userId.value,
     }})
 }
-
+// 博客点赞量+1
+const incrementLikeCount = async () => {
+  request.post('/user/blog/incrementLikeCount/'+BlogId, {})
+  .then((res) => {
+    ElMessage.success('点赞成功')
+  })
+  .catch((err) => {
+    console.log(err)
+  })
+}
+// 博客点赞量+1
+const incrementStarCount = async () => {
+  request.post('/user/blog/incrementStarCount/'+BlogId, {})
+  .then((res) => {
+    ElMessage.success('点赞成功')
+  })
+  .catch((err) => {
+    console.log(err)
+  })
+}
+// 获取点赞收藏状态
+const getLikeAndStarStatus = async () =>{
+  request.get('/user/blog/getStatusOfLikeAndStar/'+BlogId, {})
+  .then((res) => {
+    console.log(res)
+  })
+  .catch((err) => {
+    console.log(err)
+  })
+}
 </script>
 
 <style scoped lang="scss">
@@ -388,6 +419,7 @@ const toUserDetail = () =>{
       right: 20px;
       padding: 10px 0;
       margin: -20 -20px;
+      padding-left: 20px;
       box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
       border-radius: 8px 8px 0 0;
       overflow-x: hidden;
@@ -410,6 +442,7 @@ const toUserDetail = () =>{
       }
 
       .interaction-buttons {
+        padding-right: 20px;
         display: flex;
         justify-content: flex-end; // 关键修改
 

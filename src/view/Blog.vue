@@ -36,7 +36,9 @@
                   <el-icon>
                     <component :is="selectedIndex === '10' ? BellFilled : Bell" />
                   </el-icon>
-                  <span>我的关注</span>
+                  <span :style="{ color: selectedIndex === '10' ? '#409EFF' : '#606266' }">
+                    我的关注
+                  </span>
                 </el-menu-item>
                 <el-menu-item index="11">
                   <el-icon>
