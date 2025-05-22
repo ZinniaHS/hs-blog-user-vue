@@ -1,4 +1,5 @@
 <template>
+  <div>{{userStatus}}</div>
   <div class="blog-detail-container">
     <!-- 左侧边栏 -->
     <div class="sidebar">
@@ -16,7 +17,8 @@
             <div class="stat-item"><span class="number">{{userInfo.totalFollowers}}</span>粉丝</div>
             <div class="stat-item"><span class="number">{{userInfo.totalViews}}</span>总浏览数</div>
           </div>
-          <el-button v-if="!isMyPage" class="follow-btn" type="primary">+ 关注</el-button>
+          <el-button v-if="!isMyPage && !userStatus?.followed" class="follow-btn" type="primary" @click="subscribeBlogger">+ 关注</el-button>
+          <el-button v-else-if="userStatus?.followed" @click="unsubscribeBlogger">已关注</el-button>
           <el-button v-else class="toMyDetail-btn" @click="toUserDetail" >进入我的主页</el-button>
         </div>
       </el-affix>
@@ -71,8 +73,10 @@
               <span class="author-name">{{blog.username}}</span>
             </div>
             <div class="interaction-buttons">
-              <el-button circle @click="incrementLikeCount"><el-icon><CaretTop /></el-icon></el-button>
-              <el-button circle @click="incrementStarCount"><el-icon><Star /></el-icon></el-button>
+              <el-button circle type="primary" v-if="userStatus?.liked" @click="decrementLikeCount"><el-icon><CaretTop /></el-icon></el-button>
+              <el-button circle v-else @click="incrementLikeCount"><el-icon><CaretTop /></el-icon></el-button>
+              <el-button circle type="primary" v-if="userStatus?.starred" @click="decrementStarCount"><el-icon><Star /></el-icon></el-button>
+              <el-button circle v-else @click="incrementStarCount"><el-icon><Star /></el-icon></el-button>
             </div>
           </div>
         </el-affix>
@@ -102,14 +106,20 @@ const blog = ref({
   title: '',
   subtitle: '',
 })
+// 点赞，关注，收藏状态
+const userStatus = ref({
+  followed: false,
+  liked: false,
+  starred: false
+})
 // 初始化
 onMounted( async() => {
   // 博客浏览量+1
   await incrementViewCount()
   // 展示博客详情
   await showBlogDetail(BlogId)
-
-  getLikeAndStarStatus()
+  // 获取点赞和收藏状态
+  // await getLikeStarAndFollowStatus()
 })
 // 获取博客详情
 const showBlogDetail = async (id) => {
@@ -117,7 +127,10 @@ const showBlogDetail = async (id) => {
   }).then((res) => {
     blog.value = res.data
     userId.value = res.data.userId
+    // 验证是否为自己的页面
     verifyIfIsMyself()
+    // 获取点赞和收藏状态
+    getLikeStarAndFollowStatus()
   })
 }
 // 判断是不是自己的页面，因为某些组件是自己页面才渲染的
@@ -153,30 +166,85 @@ const incrementLikeCount = async () => {
   request.post('/user/blog/incrementLikeCount/'+BlogId, {})
   .then((res) => {
     ElMessage.success('点赞成功')
+    getLikeStarAndFollowStatus()
   })
   .catch((err) => {
     console.log(err)
   })
 }
-// 博客点赞量+1
+// 博客取消点赞
+const decrementLikeCount = async () => {
+  request.post('/user/blog/decrementLikeCount/'+BlogId, {})
+  .then((res) => {
+    ElMessage.success('已取消点赞')
+    getLikeStarAndFollowStatus()
+  })
+  .catch((err) => {
+    console.log(err)
+  })
+}
+// 博客收藏量+1
 const incrementStarCount = async () => {
   request.post('/user/blog/incrementStarCount/'+BlogId, {})
   .then((res) => {
-    ElMessage.success('点赞成功')
+    ElMessage.success('收藏成功')
+    getLikeStarAndFollowStatus()
+  })
+  .catch((err) => {
+    console.log(err)
+  })
+}
+// 取消博客收藏
+const decrementStarCount = async () => {
+  request.post('/user/blog/decrementStarCount/'+BlogId, {})
+      .then((res) => {
+        ElMessage.success('已取消收藏')
+        getLikeStarAndFollowStatus()
+      })
+      .catch((err) => {
+        console.log(err)
+      })
+}
+// 关注博主
+const subscribeBlogger = () =>{
+  let bloggerId = userId.value;
+  request.post('/user/subscribeBlogger/'+bloggerId, {})
+  .then((res) => {
+    ElMessage.success('关注成功')
+    getLikeStarAndFollowStatus()
+  })
+  .catch((err) => {
+    console.log(err)
+  })
+}
+// 取消关注博主
+const unsubscribeBlogger = () =>{
+  let bloggerId = userId.value;
+  request.post('/user/unsubscribeBlogger/'+bloggerId, {})
+  .then((res) => {
+    ElMessage.success('取消关注成功')
+    getLikeStarAndFollowStatus()
   })
   .catch((err) => {
     console.log(err)
   })
 }
 // 获取点赞收藏状态
-const getLikeAndStarStatus = async () =>{
-  request.get('/user/blog/getStatusOfLikeAndStar/'+BlogId, {})
-  .then((res) => {
-    console.log(res)
+const getLikeStarAndFollowStatus = async () =>{
+  request.get('/user/blog/getLikeStarAndFollowStatus', {
+    params: {
+      blogId: BlogId,
+      bloggerId: userId.value,
+    }
   })
-  .catch((err) => {
-    console.log(err)
-  })
+      .then((res) => {
+        userStatus.value = res.data
+        console.log(res)
+        console.log(userStatus.value)
+      })
+      .catch((err) => {
+        console.log(err)
+      })
 }
 </script>
 
