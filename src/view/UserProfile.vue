@@ -70,12 +70,13 @@
             <el-tab-pane label="收藏" name="favorites"></el-tab-pane>
             <el-tab-pane label="我的草稿" name="drafts" v-if="isMyPage === true"></el-tab-pane>
           </el-tabs>
-
+          <!-- 筛选条件：按发布时间 -->
           <div class="filter-options">
             <div class="filter-option active">
               <span>按最后发布时间</span>
               <el-icon><SortDown /></el-icon>
             </div>
+            <!-- 筛选条件：按访问量 -->
             <div class="filter-option">
               <span>按访问量</span>
               <el-icon><SortDown /></el-icon>
@@ -84,65 +85,71 @@
 
           <!-- 文章区 -->
           <template v-if="activeTab === 'articles'">
+            <!-- 判断没有文章时提示 -->
             <div v-if="articles.total === 0 && activeTab === 'articles'" class="no-articles">
               博主暂时没有文章
             </div>
-            <div class="articles-list">
-              <div v-for="(article, index) in articles.record" v-if="articles.record.length" :key="index" class="article-item">
-                <div class="article-title" @click="toBlogDetail(article)">{{ article.title }}</div>
-                <div class="article-desc">{{ article.subTitle }}</div>
-                <div class="article-meta">
-                  <el-tag size="small" type="success" effect="plain">原创</el-tag>
-                  <span class="publish-info">博客创建于 {{ article.createTime }}</span>
-                  <span class="article-stats">
+            <!-- 有博客时显示博客与分页条 -->
+            <div v-if="articles.record.length">
+              <div class="articles-list">
+                <div v-for="(article, index) in articles.record" :key="index" class="article-item">
+                  <div class="article-title" @click="toBlogDetail(article)">{{ article.title }}</div>
+                  <div class="article-desc">{{ article.subTitle }}</div>
+                  <div class="article-meta">
+                    <el-tag size="small" type="success" effect="plain">原创</el-tag>
+                    <span class="publish-info">博客创建于 {{ article.createTime }}</span>
+                    <span class="article-stats">
                   <span>{{ article.viewCount }} 阅读</span>
                   <span>{{ article.likeCount }} 点赞</span>
                   <span>{{ article.starCount }} 收藏</span>
-                    <!--<span>{{ article.comments }} 评论</span>-->
+                      <!--<span>{{ article.comments }} 评论</span>-->
                 </span>
+                  </div>
                 </div>
               </div>
-            </div>
-            <!-- 分页组件绑定草稿分页参数 -->
-            <div class="pagination-wrapper">
-              <el-pagination
-                  v-model:current-page="articlePageQueryDTO.pageNum"
-                  v-model:page-size="articlePageQueryDTO.pageSize"
-                  :page-sizes="[3, 6, 10, 20]"
-                  background
-                  layout="total, sizes, prev, pager, next, jumper"
-                  :total="articles.total"
-                  @size-change="handleArticleSizeChange"
-                  @current-change="handleArticleCurrentChange"/>
+              <!-- 分页组件绑定草稿分页参数 -->
+              <div class="pagination-wrapper">
+                <el-pagination
+                    v-model:current-page="articlePageQueryDTO.pageNum"
+                    v-model:page-size="articlePageQueryDTO.pageSize"
+                    :page-sizes="[3, 6, 10, 20]"
+                    background
+                    layout="total, sizes, prev, pager, next, jumper"
+                    :total="articles.total"
+                    @size-change="handleArticleSizeChange"
+                    @current-change="handleArticleCurrentChange"/>
+              </div>
             </div>
           </template>
 
           <!-- 草稿区 -->
           <template v-if="activeTab === 'drafts' && isMyPage === true">
             <div v-if="draftBlogs.total === 0 && activeTab === 'drafts'" class="no-articles">
-              博主暂时没有文章
+              没有草稿 <div class="toBlogEdit"><el-button type="primary" @click="toBlogEdit">去写博客</el-button></div>
             </div>
             <!-- 用户提供的草稿内容 -->
-            <div v-for="(draft, index) in draftBlogs" v-if="draftBlogs.record.length" :key="index" class="article-item">
-              <div class="article-title" @click="toBlogEdit(draft)">{{ draft.title }}</div>
-              <div class="article-desc">{{ draft.subTitle }}</div>
-              <div class="article-meta">
-                <span class="publish-info">博客创建于 {{ draft.createTime }}</span>
-                <span class="article-stats">
+            <div v-if="draftBlogs.record.length">
+              <div v-for="(draft, index) in draftBlogs"  :key="index" class="article-item">
+                <div class="article-title" @click="toBlogEdit(draft)">{{ draft.title }}</div>
+                <div class="article-desc">{{ draft.subTitle }}</div>
+                <div class="article-meta">
+                  <span class="publish-info">博客创建于 {{ draft.createTime }}</span>
+                  <span class="article-stats">
                 </span>
+                </div>
               </div>
-            </div>
-            <!-- 分页组件绑定草稿分页参数 -->
-            <div class="pagination-wrapper">
-              <el-pagination
-                  v-model:current-page="draftPageQueryDTO.pageNum"
-                  v-model:page-size="draftPageQueryDTO.pageSize"
-                  :page-sizes="[6, 10, 20]"
-                  background
-                  layout="total, sizes, prev, pager, next, jumper"
-                  :total="draftBlogs.total"
-                  @size-change="handleDraftSizeChange"
-                  @current-change="handleDraftCurrentChange"/>
+              <!-- 分页组件绑定草稿分页参数 -->
+              <div class="pagination-wrapper">
+                <el-pagination
+                    v-model:current-page="draftPageQueryDTO.pageNum"
+                    v-model:page-size="draftPageQueryDTO.pageSize"
+                    :page-sizes="[6, 10, 20]"
+                    background
+                    layout="total, sizes, prev, pager, next, jumper"
+                    :total="draftBlogs.total"
+                    @size-change="handleDraftSizeChange"
+                    @current-change="handleDraftCurrentChange"/>
+              </div>
             </div>
           </template>
 
@@ -318,14 +325,8 @@ const toUserDetail = () =>{
 
 <style scoped>
 
-.content-col {
-  padding: 20px;
-}
-
-.content-area {
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+.toBlogEdit{
+  margin-top: 10px;
 }
 
 .section-title{

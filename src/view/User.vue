@@ -22,7 +22,15 @@
     <!-- 登录状态导航 -->
     <template v-if="isLoggedIn">
       <el-sub-menu index="3">
-        <template #title>欢迎您，{{ username }}</template>
+          <template #title>
+            <span class="welcome-text">欢迎您，{{ username }}</span>
+            <img
+                v-if="avatarUrl"
+                :src="avatarUrl"
+                alt="用户头像"
+                class="user-avatar"
+            >
+          </template>
         <el-menu-item index="3-1" @click="toProfile">个人中心</el-menu-item>
         <el-menu-item index="3-2" @click="handleLogout">退出登录</el-menu-item>
       </el-sub-menu>
@@ -49,10 +57,8 @@ import {ElMessage} from "element-plus";
 
 // 登录状态判断
 const isLoggedIn = computed(() => localStorage.getItem('token') !== null)
-const username = computed(() => localStorage.getItem('email') || '访客')
-
-console.log(localStorage.getItem('token'))
-console.log(username.value)
+const username = computed(() => localStorage.getItem('username') || '访客')
+const avatarUrl = computed(() => localStorage.getItem('avatarUrl'))
 // 退出登录逻辑
 const handleLogout =  () => {
   try {
@@ -63,6 +69,9 @@ const handleLogout =  () => {
       }
     }).then(res => {
       localStorage.removeItem('token')
+      localStorage.removeItem('userId')
+      localStorage.removeItem('username')
+      localStorage.removeItem('avatarUrl')
       localStorage.removeItem('email')
       if(res.code === 1)
         ElMessage.success(res.data)
@@ -74,6 +83,9 @@ const handleLogout =  () => {
     console.error('退出失败:', error)
     // 异常情况下仍清理本地状态
     localStorage.removeItem('token')
+    localStorage.removeItem('userId')
+    localStorage.removeItem('username')
+    localStorage.removeItem('avatarUrl')
     localStorage.removeItem('email')
     router.push('/login')
   }
@@ -106,6 +118,22 @@ const toProfile = () =>{
 </script>
 
 <style scoped>
+.user-avatar {
+  width: 40px;
+  border-radius: 50%;
+  margin-left: 10px;
+  object-fit: fill;
+}
+
+.welcome-text {
+  font-weight: 500;
+}
+
+/* 调整原有样式以适配新元素 */
+.el-sub-menu .el-menu-item {
+  padding-left: 30px; /* 增加左侧间距 */
+}
+
 .flex-grow {
   flex-grow: 1;
 }

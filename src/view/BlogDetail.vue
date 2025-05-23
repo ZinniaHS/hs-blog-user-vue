@@ -1,5 +1,4 @@
 <template>
-  <div>{{userStatus}}</div>
   <div class="blog-detail-container">
     <!-- 左侧边栏 -->
     <div class="sidebar">

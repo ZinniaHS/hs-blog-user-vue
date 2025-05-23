@@ -36,9 +36,7 @@
                   <el-icon>
                     <component :is="selectedIndex === '10' ? BellFilled : Bell" />
                   </el-icon>
-                  <span :style="{ color: selectedIndex === '10' ? '#409EFF' : '#606266' }">
-                    我的关注
-                  </span>
+                  <span>我的关注</span>
                 </el-menu-item>
                 <el-menu-item index="11">
                   <el-icon>
@@ -106,7 +104,7 @@
               class="ranking-card"
           >
             <div class="ranking-number">{{ blog.rank }}</div>
-            <h4>{{ blog.title }}</h4>
+            <h4 class="ranking-title" @click="toBlogDetail(blog)">{{ blog.title }}</h4>
             <div class="views-count">{{ blog.viewCount }} 次浏览</div>
           </el-card>
         </div>
@@ -121,6 +119,8 @@ import {ArrowDown, Notebook, Bell, Star, Search, BellFilled, StarFilled} from '@
 import request from '@/utils/request'
 import router from "@/router/index.js";
 import {ElMessage} from "element-plus";
+// 获取当前用户id
+const userId = localStorage.getItem('userId');
 
 // 搜索框中输入的内容
 const searchKeyword = ref('')
@@ -194,10 +194,12 @@ const handleCurrentChange = () =>{
 watch(selectedIndex, (newVal) => {
   if (newVal === '10') {
     getSubscription();
+  } else if (newVal === '11') {
+    getStarBlogs();
   } else {
     load(); // 恢复默认加载
   }
-})
+});
 // 写博客功能需要登录
 const handleWriteBlog = () => {
   const token = localStorage.getItem('token');
@@ -234,6 +236,7 @@ onMounted(() => {
   // 获取Top5浏览量的博客
   getTopFiveBlog()
   document.addEventListener('click', handleClickOutside);
+
 });
 onBeforeUnmount(() => {
   document.removeEventListener('click', handleClickOutside);
@@ -250,11 +253,11 @@ const getTopFiveBlog = () =>{
 }
 // 排行榜数据
 const topBlogs = ref({})
-//
+// 获取当前用户关注的博主的所有博客
 const getSubscription = () =>{
   request.get('/user/blog/getSubscription',{
     params: {
-      userId: -1,
+      userId: userId,
       pageNum: blogPageQueryDTO.pageNum,
       pageSize: blogPageQueryDTO.pageSize,
       keyWord: searchKeyword.value,
@@ -270,6 +273,27 @@ const getSubscription = () =>{
     console.log(err)
   })
 }
+// 获取当前用户收藏的所有博客
+const getStarBlogs = () =>{
+  request.get('/user/blog/getStarBlogs',{
+    params: {
+      userId: userId,
+      pageNum: blogPageQueryDTO.pageNum,
+      pageSize: blogPageQueryDTO.pageSize,
+      keyWord: searchKeyword.value,
+      // 创建时间排序
+      createTimeOrder: '',
+      // 浏览量排序
+      viewCountOrder: ''
+    }
+  }).then((res) => {
+    blogs.total = res.data.total
+    blogs.record = res.data.records
+  }).catch((err) => {
+    console.log(err)
+  })
+}
+
 const formatDate = (date) => {
   return new Date(date).toLocaleDateString();
 };
@@ -413,7 +437,6 @@ const formatDate = (date) => {
   flex: 0 0 300px;
 }
 
-/* 侧边栏样式 */
 .sidebar-affix {
   width: 100%;
 }
@@ -541,7 +564,6 @@ const formatDate = (date) => {
   margin-top: 8px;
 }
 
-/* 按钮激活 */
 .type-btn.active .arrow-icon {
   transform: rotate(180deg);
 }
@@ -551,5 +573,17 @@ const formatDate = (date) => {
   display: flex;
   justify-content: center;
   padding: 0 20px;
+}
+
+.ranking-title {
+  transition: all 0.3s ease;
+  cursor: pointer;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.ranking-title:hover {
+  color: #409eff;
+  transform: scale(1.05);
 }
 </style>

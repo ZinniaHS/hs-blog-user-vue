@@ -65,7 +65,7 @@ const rules = {
   email: [{ required: true, message: '请输入注册邮箱', trigger: 'blur' }],
   password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
 }
-
+// 登录
 const handleLogin = async () => {
   try {
     await loginForm.value.validate()
@@ -73,9 +73,17 @@ const handleLogin = async () => {
     const res = await request.post('/user/login', form.value)
     console.log(res)
     if(res.code === 1) {
-      localStorage.setItem('token', res.data)
+      localStorage.setItem('token', res.data.token)
+      localStorage.setItem('userId', res.data.userId)
+      localStorage.setItem('username', res.data.username)
+      localStorage.setItem('avatarUrl', res.data.avatarUrl)
       localStorage.setItem('email', form.value.email)
       ElMessage.success('登录成功')
+      console.log(localStorage.getItem('token'))
+      console.log(localStorage.getItem('userId'))
+      console.log(localStorage.getItem('username'))
+      console.log(localStorage.getItem('avatarUrl'))
+      console.log(localStorage.getItem('email'))
       router.push(redirectPath.value)
     }else
       ElMessage.error(res.msg)
