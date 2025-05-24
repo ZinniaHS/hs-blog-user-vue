@@ -56,8 +56,30 @@
       <div class="sidebar">
         <div class="hot-articles">
           <h4 class="section-title">热门文章</h4>
-          <div class="no-articles">
-            博主暂时没有文章
+          <div class="articles-container">
+            <el-card
+                v-for="(article, index) in topArticles"
+                :key="index"
+                class="hot-article-card"
+                shadow="hover"
+            >
+              <div class="rank-badge">{{ index + 1 }}</div>
+              <div class="article-content">
+                <div class="article-title" @click="toBlogDetail(article)">
+                  {{ article.title }}
+                </div>
+                <div class="article-stats">
+                  <el-icon><View /></el-icon>
+                  <span class="view-count">{{ article.viewCount }}</span>
+                  <el-icon><CaretTop /></el-icon>
+                  <span class="view-count">{{ article.viewCount }}</span>
+                </div>
+              </div>
+            </el-card>
+
+<!--            <div v-if="topArticles.length === 0" class="no-articles">-->
+<!--              博主暂时没有文章-->
+<!--            </div>-->
           </div>
         </div>
       </div>
@@ -168,7 +190,7 @@ import {
   SortDown, More
 } from '@element-plus/icons-vue';
 import {useRoute} from "vue-router";
-import {ElNotification} from "element-plus";
+import {ElMessage, ElNotification} from "element-plus";
 import router from "@/router/index.js";
 import request from "@/utils/request.js";
 
@@ -212,6 +234,8 @@ const draftBlogs = reactive({
   total: 0,
   record: [],
 });
+// 热门文章
+const topArticles = ref({})
 // 选择每页显示多少条记录时，触发分页查询
 const handleArticleSizeChange = () =>{
   getArticles(trueId.value)
@@ -239,6 +263,8 @@ onMounted(async () => {
   getArticles(trueId.value)
   // 草稿博客
   getDrafts(trueId.value);
+  // 获取浏览量前5的热门文章
+  getTopFiveBlogForOne()
 })
 // 判断是不是自己的页面，因为某些组件是自己页面才渲染的
 const verifyIfIsMyself  = async (currentId) =>{
@@ -294,6 +320,18 @@ const getDrafts = (trueId) => {
     draftBlogs.total = res.data.total
   })
 };
+// 获取浏览量前5的热门文章
+const getTopFiveBlogForOne = async () => {
+  await request.get('/user/blog/getTopFiveBlogForOne/'+currentId.value, {})
+  .then((res) => {
+    console.log(res)
+    // 只取前三浏览量记录
+    topArticles.value = res.data.slice(0, 3)
+  })
+  .catch((err) => {
+    console.log(err)
+  })
+}
 // 进入博客详情页
 const toBlogDetail = (blog) =>{
   router.push({
@@ -591,5 +629,69 @@ const toUserDetail = () =>{
   margin: 20px 0;
   display: flex;
   padding: 0 20px;
+}
+
+.articles-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.hot-article-card {
+  width: 100%;
+  border-radius: 8px;
+}
+
+.rank-badge {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  width: 24px;
+  height: 24px;
+  background: #f56c6c;
+  color: white;
+  border-radius: 50%;
+  font-weight: bold;
+  margin-bottom: 12px;
+}
+
+.article-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.article-title {
+  font-size: 16px;
+  font-weight: 500;
+  color: #333;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.article-title:hover {
+  color: #409eff;
+}
+
+.article-stats {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #666;
+}
+
+.view-count {
+  color: #409eff;
+  font-weight: 500;
+}
+
+.no-articles {
+  text-align: center;
+  padding: 16px 0;
+  color: #999;
+  font-size: 14px;
 }
 </style>
