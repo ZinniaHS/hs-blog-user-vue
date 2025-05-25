@@ -16,31 +16,45 @@
             </div>
           </div>
           <div class="user-stats">
-            <div class="stat-item">
-              <div class="stat-value">{{ userInfo.totalBlogs }}</div>
-              <div class="stat-label">原创</div>
-            </div>
+            <el-tooltip placement="bottom">
+              <template #content>博主的原创总博客数</template>
+              <div class="stat-item">
+                  <div class="stat-value">{{ userInfo.totalBlogs }}</div>
+                  <div class="stat-label">原创</div>
+              </div>
+            </el-tooltip>
             <div class="stat-divider"></div>
-            <div class="stat-item">
-              <div class="stat-value">{{ userInfo.totalLikes }}</div>
-              <div class="stat-label">获赞</div>
-            </div>
+            <el-tooltip placement="bottom">
+              <template #content>博主在所有博客收获的总点赞数</template>
+              <div class="stat-item">
+                  <div class="stat-value">{{ userInfo.totalLikes }}</div>
+                  <div class="stat-label">获赞</div>
+              </div>
+            </el-tooltip>
             <div class="stat-divider"></div>
-            <div class="stat-item">
-              <div class="stat-value">{{ userInfo.totalFollowers }}</div>
-              <div class="stat-label">粉丝</div>
-            </div>
+            <el-tooltip placement="bottom">
+              <template #content>关注博主的人数统计</template>
+              <div class="stat-item">
+                  <div class="stat-value">{{ userInfo.totalFollowers }}</div>
+                  <div class="stat-label">粉丝</div>
+              </div>
+            </el-tooltip>
             <div class="stat-divider"></div>
-            <div class="stat-item">
-              <div class="stat-value">{{ userInfo.totalViews }}</div>
-              <div class="stat-label">总访问量</div>
-            </div>
+            <el-tooltip placement="bottom">
+              <template #content>博主所有博客的阅读量总计</template>
+              <div class="stat-item">
+                  <div class="stat-value">{{ userInfo.totalViews }}</div>
+                  <div class="stat-label">总访问量</div>
+              </div>
+            </el-tooltip>
             <div class="stat-divider"></div>
-
-            <div class="stat-item">
-              <div class="stat-value">统计中</div>
-              <div class="stat-label">排名</div>
-            </div>
+            <el-tooltip placement="bottom">
+              <template #content>排名还在统计中...</template>
+              <div class="stat-item">
+                  <div class="stat-value">统计中</div>
+                  <div class="stat-label">排名</div>
+              </div>
+            </el-tooltip>
           </div>
 
           <div class="user-bio">
@@ -253,11 +267,11 @@ const handleDraftCurrentChange = () =>{
 }
 // 初始化
 onMounted(async () => {
-  console.log('currentId: '+currentId.value)
+  // console.log('currentId: '+currentId.value)
   // 首先判断是否为自己的页面
   await verifyIfIsMyself(currentId.value);
   // console.log(trueId.value)
-  console.log(isMyPage.value)
+  // console.log(isMyPage.value)
   // 查询文章，已经发布的博客称为 article文章
   getArticles(trueId.value)
   // 草稿博客
@@ -294,7 +308,7 @@ const getArticles = async (trueId) => {
       viewCountOrder: ''
     }
   }).then((res) => {
-    console.log(res)
+    // console.log(res)
     articles.record = res.data.records
     articles.total = res.data.total
   })
@@ -323,7 +337,7 @@ const getDrafts = (trueId) => {
 const getTopFiveBlogForOne = async () => {
   await request.get('/user/blog/getTopFiveBlogForOne/'+currentId.value, {})
   .then((res) => {
-    console.log(res)
+    // console.log(res)
     // 只取前三浏览量记录
     topArticles.value = res.data.slice(0, 3)
   })

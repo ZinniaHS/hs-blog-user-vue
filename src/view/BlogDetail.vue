@@ -10,11 +10,23 @@
             <h3 class="name">{{userInfo.username}}</h3>
           </div>
           <div class="stats">
-            <div class="stat-item"><span class="number">{{userInfo.totalBlogs}}</span>原创</div>
-            <div class="stat-item"><span class="number">{{userInfo.totalLikes}}</span>点赞</div>
+            <el-tooltip placement="bottom">
+              <template #content>博主的原创总博客数</template>
+              <div class="stat-item"><span class="number">{{userInfo.totalBlogs}}</span>原创</div>
+            </el-tooltip>
+            <el-tooltip placement="bottom">
+              <template #content>博主在所有博客收获的总点赞数</template>
+              <div class="stat-item"><span class="number">{{userInfo.totalLikes}}</span>获赞</div>
+            </el-tooltip>
             <!--            <div class="stat-item"><span class="number">{{userInfo.totalStars}}</span>收藏</div>-->
-            <div class="stat-item"><span class="number">{{userInfo.totalFollowers}}</span>粉丝</div>
-            <div class="stat-item"><span class="number">{{userInfo.totalViews}}</span>总浏览数</div>
+            <el-tooltip placement="bottom">
+              <template #content>关注博主的人数统计</template>
+              <div class="stat-item"><span class="number">{{userInfo.totalFollowers}}</span>粉丝</div>
+            </el-tooltip>
+            <el-tooltip placement="bottom">
+              <template #content>博主所有博客的阅读量总计</template>
+              <div class="stat-item"><span class="number">{{userInfo.totalViews}}</span>总浏览数</div>
+            </el-tooltip>
           </div>
           <el-button v-if="!isMyPage && !userStatus?.followed" class="follow-btn" type="primary" @click="subscribeBlogger">+ 关注</el-button>
           <el-button v-else-if="userStatus?.followed" @click="unsubscribeBlogger">已关注</el-button>
