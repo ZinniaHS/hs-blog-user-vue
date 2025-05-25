@@ -72,14 +72,13 @@
                   <el-icon><View /></el-icon>
                   <span class="view-count">{{ article.viewCount }}</span>
                   <el-icon><CaretTop /></el-icon>
-                  <span class="view-count">{{ article.viewCount }}</span>
+                  <span class="view-count">{{ article.likeCount }}</span>
                 </div>
               </div>
             </el-card>
-
-<!--            <div v-if="topArticles.length === 0" class="no-articles">-->
-<!--              博主暂时没有文章-->
-<!--            </div>-->
+            <div v-if="topArticles.length === 0" class="no-articles">
+              博主暂时没有文章
+            </div>
           </div>
         </div>
       </div>
@@ -118,7 +117,7 @@
                   <div class="article-title" @click="toBlogDetail(article)">{{ article.title }}</div>
                   <div class="article-desc">{{ article.subTitle }}</div>
                   <div class="article-meta">
-                    <el-tag size="small" type="success" effect="plain">原创</el-tag>
+                    <el-tag size="small" type="primary" effect="plain">原创</el-tag>
                     <span class="publish-info">博客创建于 {{ article.createTime }}</span>
                     <span class="article-stats">
                   <span>{{ article.viewCount }} 阅读</span>
@@ -648,7 +647,7 @@ const toUserDetail = () =>{
   align-items: center;
   width: 24px;
   height: 24px;
-  background: #f56c6c;
+  background: #409eff;
   color: white;
   border-radius: 50%;
   font-weight: bold;

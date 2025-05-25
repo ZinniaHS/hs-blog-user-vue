@@ -12,7 +12,7 @@
           <div class="stats">
             <div class="stat-item"><span class="number">{{userInfo.totalBlogs}}</span>原创</div>
             <div class="stat-item"><span class="number">{{userInfo.totalLikes}}</span>点赞</div>
-<!--            <div class="stat-item"><span class="number">{{userInfo.totalStars}}</span>收藏</div>-->
+            <!--            <div class="stat-item"><span class="number">{{userInfo.totalStars}}</span>收藏</div>-->
             <div class="stat-item"><span class="number">{{userInfo.totalFollowers}}</span>粉丝</div>
             <div class="stat-item"><span class="number">{{userInfo.totalViews}}</span>总浏览数</div>
           </div>
@@ -26,17 +26,29 @@
       <el-affix :offset-top="180">
         <div class="hot-articles">
           <h4 class="section-title">热门文章</h4>
-<!--          <ul v-if="hotArticles.length > 0">-->
-<!--            <li class="article-item" v-for="(article, index) in hotArticles" :key="index">-->
-<!--              <span class="rank">{{index + 1}}</span>-->
-<!--              <router-link :to="'/blog/' + article.id" class="article-title">-->
-<!--                {{article.title}}-->
-<!--              </router-link>-->
-<!--              <span class="views">{{article.views}}</span>-->
-<!--            </li>-->
-<!--          </ul>-->
-          <div class="no-articles">
-            博主暂时没有文章
+          <div class="articles-container">
+            <el-card
+                v-for="(article, index) in topArticles"
+                :key="index"
+                class="hot-article-card"
+                shadow="hover"
+            >
+              <div class="rank-badge">{{ index + 1 }}</div>
+              <div class="article-content">
+                <div class="article-title" @click="toBlogDetail(article)">
+                  {{ article.title }}
+                </div>
+                <div class="article-stats">
+                  <el-icon><View /></el-icon>
+                  <span class="view-count">{{ article.viewCount }}</span>
+                  <el-icon><CaretTop /></el-icon>
+                  <span class="view-count">{{ article.likeCount }}</span>
+                </div>
+              </div>
+            </el-card>
+            <div v-if="topArticles.length === 0" class="no-articles">
+              博主暂时没有文章
+            </div>
           </div>
         </div>
       </el-affix>
@@ -72,10 +84,16 @@
               <span class="author-name">{{blog.username}}</span>
             </div>
             <div class="interaction-buttons">
-              <el-button circle type="primary" v-if="userStatus?.liked" @click="decrementLikeCount"><el-icon><CaretTop /></el-icon></el-button>
-              <el-button circle v-else @click="incrementLikeCount"><el-icon><CaretTop /></el-icon></el-button>
-              <el-button circle type="primary" v-if="userStatus?.starred" @click="decrementStarCount"><el-icon><Star /></el-icon></el-button>
-              <el-button circle v-else @click="incrementStarCount"><el-icon><Star /></el-icon></el-button>
+              <el-tooltip placement="top">
+                <template #content>为博客点赞/取消点赞</template>
+                <el-button circle type="primary" v-if="userStatus?.liked" @click="decrementLikeCount"><el-icon><CaretTop /></el-icon></el-button>
+                <el-button circle v-else @click="incrementLikeCount"><el-icon><CaretTop /></el-icon></el-button>
+              </el-tooltip>
+              <el-tooltip placement="top">
+                <template #content>收藏/取消收藏博客</template>
+                <el-button circle type="primary" v-if="userStatus?.starred" @click="decrementStarCount"><el-icon><Star /></el-icon></el-button>
+                <el-button circle v-else @click="incrementStarCount"><el-icon><Star /></el-icon></el-button>
+              </el-tooltip>
             </div>
           </div>
         </el-affix>
@@ -98,6 +116,8 @@ const BlogId = Number(useRoute().query.id)
 const userId = ref('')
 // 判断是否为当前登录账号的页面
 const isMyPage = ref(false)
+// 热门文章
+const topArticles = ref({})
 // 这篇博客博主的信息
 const userInfo = ref({})
 // 博客详情
@@ -117,8 +137,6 @@ onMounted( async() => {
   await incrementViewCount()
   // 展示博客详情
   await showBlogDetail(BlogId)
-  // 获取点赞和收藏状态
-  // await getLikeStarAndFollowStatus()
 })
 // 获取博客详情
 const showBlogDetail = async (id) => {
@@ -130,6 +148,8 @@ const showBlogDetail = async (id) => {
     verifyIfIsMyself()
     // 获取点赞和收藏状态
     getLikeStarAndFollowStatus()
+    // 获取热门文章
+    getTopFiveBlogForOne()
   })
 }
 // 判断是不是自己的页面，因为某些组件是自己页面才渲染的
@@ -147,10 +167,10 @@ const verifyIfIsMyself  = async () =>{
 // 博客浏览量+1
 const incrementViewCount = async () => {
   request.post('/user/blog/incrementViewCount/'+BlogId, {})
-  .then((res) => {})
-  .catch((err) => {
-    console.log(err)
-  })
+      .then((res) => {})
+      .catch((err) => {
+        console.log(err)
+      })
 }
 // 进入用户详情页
 const toUserDetail = () =>{
@@ -163,35 +183,35 @@ const toUserDetail = () =>{
 // 博客点赞量+1
 const incrementLikeCount = async () => {
   request.post('/user/blog/incrementLikeCount/'+BlogId, {})
-  .then((res) => {
-    ElMessage.success('点赞成功')
-    getLikeStarAndFollowStatus()
-  })
-  .catch((err) => {
-    console.log(err)
-  })
+      .then((res) => {
+        ElMessage.success('点赞成功')
+        getLikeStarAndFollowStatus()
+      })
+      .catch((err) => {
+        console.log(err)
+      })
 }
 // 博客取消点赞
 const decrementLikeCount = async () => {
   request.post('/user/blog/decrementLikeCount/'+BlogId, {})
-  .then((res) => {
-    ElMessage.success('已取消点赞')
-    getLikeStarAndFollowStatus()
-  })
-  .catch((err) => {
-    console.log(err)
-  })
+      .then((res) => {
+        ElMessage.success('已取消点赞')
+        getLikeStarAndFollowStatus()
+      })
+      .catch((err) => {
+        console.log(err)
+      })
 }
 // 博客收藏量+1
 const incrementStarCount = async () => {
   request.post('/user/blog/incrementStarCount/'+BlogId, {})
-  .then((res) => {
-    ElMessage.success('收藏成功')
-    getLikeStarAndFollowStatus()
-  })
-  .catch((err) => {
-    console.log(err)
-  })
+      .then((res) => {
+        ElMessage.success('收藏成功')
+        getLikeStarAndFollowStatus()
+      })
+      .catch((err) => {
+        console.log(err)
+      })
 }
 // 取消博客收藏
 const decrementStarCount = async () => {
@@ -208,25 +228,25 @@ const decrementStarCount = async () => {
 const subscribeBlogger = () =>{
   let bloggerId = userId.value;
   request.post('/user/subscribeBlogger/'+bloggerId, {})
-  .then((res) => {
-    ElMessage.success('关注成功')
-    getLikeStarAndFollowStatus()
-  })
-  .catch((err) => {
-    console.log(err)
-  })
+      .then((res) => {
+        ElMessage.success('关注成功')
+        getLikeStarAndFollowStatus()
+      })
+      .catch((err) => {
+        console.log(err)
+      })
 }
 // 取消关注博主
 const unsubscribeBlogger = () =>{
   let bloggerId = userId.value;
   request.post('/user/unsubscribeBlogger/'+bloggerId, {})
-  .then((res) => {
-    ElMessage.success('取消关注成功')
-    getLikeStarAndFollowStatus()
-  })
-  .catch((err) => {
-    console.log(err)
-  })
+      .then((res) => {
+        ElMessage.success('取消关注成功')
+        getLikeStarAndFollowStatus()
+      })
+      .catch((err) => {
+        console.log(err)
+      })
 }
 // 获取点赞收藏状态
 const getLikeStarAndFollowStatus = async () =>{
@@ -240,6 +260,18 @@ const getLikeStarAndFollowStatus = async () =>{
         userStatus.value = res.data
         console.log(res)
         console.log(userStatus.value)
+      })
+      .catch((err) => {
+        console.log(err)
+      })
+}
+// 获取浏览量前5的热门文章
+const getTopFiveBlogForOne = async () => {
+  await request.get('/user/blog/getTopFiveBlogForOne/'+userId.value, {})
+      .then((res) => {
+        console.log(res)
+        // 只取前三浏览量记录
+        topArticles.value = res.data.slice(0, 3)
       })
       .catch((err) => {
         console.log(err)
@@ -521,5 +553,78 @@ const getLikeStarAndFollowStatus = async () =>{
       }
     }
   }
+}
+
+.hot-articles {
+  width: 100%;
+  margin-top: 20px;
+  background-color: white;
+  border-radius: 8px;
+}
+
+.section-title{
+  font-size: 16px;
+  font-weight: bold;
+  margin-bottom: 15px;
+  color: #333;
+  border-left: 3px solid #409eff;
+  padding-left: 10px;
+}
+
+.articles-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.hot-article-card {
+  width: 100%;
+  border-radius: 8px;
+}
+
+.rank-badge {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  width: 24px;
+  height: 24px;
+  background: #409eff;
+  color: white;
+  border-radius: 50%;
+  font-weight: bold;
+  margin-bottom: 12px;
+}
+
+.article-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.article-title {
+  font-size: 16px;
+  font-weight: 500;
+  color: #333;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.article-title:hover {
+  color: #409eff;
+}
+
+.article-stats {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #666;
+}
+
+.view-count {
+  color: #409eff;
+  font-weight: 500;
 }
 </style>
