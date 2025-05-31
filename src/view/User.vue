@@ -111,7 +111,7 @@ const toProfile = () =>{
   router.push({
     name: 'userProfile',
     query: {
-      id: -1
+      id: localStorage.getItem('userId')
     }
   })
 }

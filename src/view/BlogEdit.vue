@@ -131,14 +131,13 @@ const postBlog = (type) => {
       let status = 1;
       if(type === 'draft')
         status = 0
-      // console.log(BlogDTO.value)
-      // console.log(content.value)
+      console.log(BlogDTO.value)
       // console.log(BlogDTO.value.categoryId)
       request.put('/user/blog', {
         id: BlogDTO.value.id,
         title: BlogDTO.value.title,
         subTitle: BlogDTO.value.subTitle,
-        content: content.value,
+        content: BlogDTO.value.content,
         categoryId: BlogDTO.value.categoryId,
         status: status
       })
@@ -191,7 +190,7 @@ const getBlogCategory = () =>{
       })
 }
 // 博客正文
-const content = ref('<h2>请在此处输入...</h2>')
+// const content = ref('<h2>请在此处输入...</h2>')
 // 是否为预览模式
 const isPreviewMode = ref(false)
 // 打开实时预览
@@ -200,12 +199,12 @@ const togglePreview = () => {
 }
 // 初始化
 onMounted(async ()=>{
+  console.log(BlogId)
   // 获取博客分类
   getBlogCategory()
   // 如果是重新编辑博客或草稿，则回显博客信息
   if(BlogId)
     await showBlogDetail(BlogId)
-  console.log(BlogDTO.value)
 })
 // 回显博客信息
 const showBlogDetail = async (id) => {
@@ -213,6 +212,7 @@ const showBlogDetail = async (id) => {
     await request.get('/user/blog/'+id,{
     }).then((res) => {
       BlogDTO.value = res.data
+      console.log(res.data)
     })
   }catch(err) {
     console.log(err)

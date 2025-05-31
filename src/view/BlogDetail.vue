@@ -319,7 +319,7 @@ const getTopFiveBlogForOne = async () => {
 }
 .blog-detail-container {
   display: flex;
-  height: calc(100vh - 60px);
+  //height: calc(100vh - 60px);
   background-color: #f5f5f5;
 
   .sidebar {

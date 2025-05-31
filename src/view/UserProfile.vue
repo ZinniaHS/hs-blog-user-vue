@@ -84,9 +84,9 @@
                 </div>
                 <div class="article-stats">
                   <el-icon><View /></el-icon>
-                  <span class="view-count">{{ article.viewCount }}</span>
-                  <el-icon><CaretTop /></el-icon>
-                  <span class="view-count">{{ article.likeCount }}</span>
+                  <span class="view-count">浏览量 {{ article.viewCount }}</span>
+<!--                  <el-icon><CaretTop /></el-icon>-->
+<!--                  <span class="view-count">{{ article.likeCount }}</span>-->
                 </div>
               </div>
             </el-card>
@@ -106,7 +106,7 @@
             <el-tab-pane label="我的草稿" name="drafts" v-if="isMyPage === true"></el-tab-pane>
           </el-tabs>
           <!-- 筛选条件：按发布时间 -->
-          <div class="filter-options">
+          <div class="filter-options" v-if="activeTab === 'articles' || activeTab === 'drafts' ">
             <div class="filter-option active">
               <span>按最后发布时间</span>
               <el-icon><SortDown /></el-icon>
@@ -157,6 +157,49 @@
             </div>
           </template>
 
+          <!-- 我的关注区 -->
+          <template v-if="activeTab === 'interactions'">
+            <div class="followees-container">
+              <el-row :gutter="20">
+                <el-col
+                    v-for="Blogger in SubscribeBloggerList"
+                    :key="Blogger.id"
+                    :xs="24"
+                    :sm="12"
+                    class="followee-col"
+                >
+                  <el-card class="followee-card" shadow="hover">
+                    <div class="followee-content">
+                      <div class="avatar-section">
+                        <el-avatar
+                            :size="40"
+                            :src="Blogger.avatarUrl"
+                            round
+                            class="user-avatar"
+                            @click="toUserProfile(Blogger.id)"
+                        ></el-avatar>
+                      </div>
+
+                      <div class="info-section">
+                        <div class="followee-name" @click="toUserProfile(Blogger.id)">{{ Blogger.username }}</div>
+                        <div class="followee-desc">{{ Blogger.description }}</div>
+                      </div>
+                    </div>
+                  </el-card>
+                </el-col>
+              </el-row>
+
+              <div v-if="followees.length === 0" class="no-followees">
+                暂无关注的人
+              </div>
+            </div>
+          </template>
+
+          <!-- 我的收藏区 -->
+          <template v-if="activeTab === 'favorites'">
+
+          </template>
+
           <!-- 草稿区 -->
           <template v-if="activeTab === 'drafts' && isMyPage === true">
             <div v-if="draftBlogs.total === 0 && activeTab === 'drafts'" class="no-articles">
@@ -164,7 +207,7 @@
             </div>
             <!-- 用户提供的草稿内容 -->
             <div v-if="draftBlogs.record.length">
-              <div v-for="(draft, index) in draftBlogs"  :key="index" class="article-item">
+              <div v-for="(draft, index) in draftBlogs.record"  :key="index" class="article-item">
                 <div class="article-title" @click="toBlogEdit(draft)">{{ draft.title }}</div>
                 <div class="article-desc">{{ draft.subTitle }}</div>
                 <div class="article-meta">
@@ -206,6 +249,31 @@ import {useRoute} from "vue-router";
 import {ElMessage, ElNotification} from "element-plus";
 import router from "@/router/index.js";
 import request from "@/utils/request.js";
+
+// 模拟关注者数据
+const followees = ref([
+  {
+    id: 1,
+    username: '前端小王',
+    description: '专注 Vue 生态的开发者，喜欢分享技术心得'
+  },
+  {
+    id: 2,
+    username: 'UI设计师小刘',
+    description: '全栈设计师，擅长用户体验设计'
+  },
+  {
+    id: 3,
+    username: '后端老张',
+    description: 'Java 开发工程师，热爱微服务架构'
+  },
+  {
+    id: 4,
+    username: '全栈开发者Alex',
+    description: 'Node.js + React 技术栈实践者'
+  }
+]);
+
 
 // 从路由中获得此页面的博主id（还需要验证是否为本人页）
 const currentId = ref(useRoute().query.id)
@@ -249,6 +317,8 @@ const draftBlogs = reactive({
 });
 // 热门文章
 const topArticles = ref({})
+// 关注的博主列表
+const SubscribeBloggerList = ref({})
 // 选择每页显示多少条记录时，触发分页查询
 const handleArticleSizeChange = () =>{
   getArticles(trueId.value)
@@ -267,7 +337,6 @@ const handleDraftCurrentChange = () =>{
 }
 // 初始化
 onMounted(async () => {
-  // console.log('currentId: '+currentId.value)
   // 首先判断是否为自己的页面
   await verifyIfIsMyself(currentId.value);
   // console.log(trueId.value)
@@ -278,14 +347,20 @@ onMounted(async () => {
   getDrafts(trueId.value);
   // 获取浏览量前5的热门文章
   getTopFiveBlogForOne()
+  // 获取关注的博主列表
+  getSubscribedBlogger()
 })
 // 判断是不是自己的页面，因为某些组件是自己页面才渲染的
 const verifyIfIsMyself  = async (currentId) =>{
+  if(localStorage.getItem('userId') === currentId)
+    isMyPage.value = true
+  else
+    isMyPage.value = false
   try {
     await request.get(`/user/getUserInfoById?id=${currentId}`, {}).then((res) => {
-      console.log(res)
+      // console.log(res)
       userInfo.value = res.data;
-      isMyPage.value = res.data.myPage;
+      // isMyPage.value = res.data.myPage;
       trueId.value = res.data.id;
       return trueId.value; // 返回trueId值
     });
@@ -337,13 +412,24 @@ const getDrafts = (trueId) => {
 const getTopFiveBlogForOne = async () => {
   await request.get('/user/blog/getTopFiveBlogForOne/'+currentId.value, {})
   .then((res) => {
-    // console.log(res)
+    console.log(res)
     // 只取前三浏览量记录
     topArticles.value = res.data.slice(0, 3)
   })
   .catch((err) => {
     console.log(err)
   })
+}
+// 获取关注的博主列表
+const getSubscribedBlogger = async () => {
+  await request.get('/user/getSubscribedBlogger/'+currentId.value, {})
+      .then((res) => {
+        console.log(res)
+        SubscribeBloggerList.value = res.data
+      })
+      .catch((err) => {
+        console.log(err)
+      })
 }
 // 进入博客详情页
 const toBlogDetail = (blog) =>{
@@ -372,9 +458,94 @@ const toUserDetail = () =>{
     }
   })
 }
+// 进入用户档案详情页
+const toUserProfile = (id) =>{
+  router.push({
+    name: 'userProfile',
+    query: {
+      id: id,
+    }
+  })
+}
 </script>
 
 <style scoped>
+
+.followee-name {
+  font-weight: bold;
+  font-size: 16px;
+  margin-bottom: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: color 0.3s ease; /* 添加过渡动画 */
+  cursor: pointer; /* 添加指针光标 */
+}
+
+.followee-name:hover {
+  color: #409eff; /* 与文章标题hover颜色一致 */
+}
+
+.followee-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.avatar-section {
+  flex-shrink: 0;
+}
+
+.user-avatar {
+  width: 40px;
+  height: 40px;
+}
+
+.info-section {
+  flex: 1;
+}
+
+.followee-name {
+  font-weight: bold;
+  font-size: 16px;
+  margin-bottom: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.followee-desc {
+  color: #666;
+  font-size: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+/* 头像悬停效果 */
+.user-avatar:hover {
+  transform: scale(1.05);
+  transition: transform 0.3s ease;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+  .followee-content {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .info-section {
+    text-align: center;
+    margin-top: 8px;
+  }
+
+  .followee-name {
+    white-space: normal;
+  }
+}
 
 .toBlogEdit{
   margin-top: 10px;
