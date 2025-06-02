@@ -105,14 +105,23 @@
             <el-tab-pane label="收藏" name="favorites"></el-tab-pane>
             <el-tab-pane label="我的草稿" name="drafts" v-if="isMyPage === true"></el-tab-pane>
           </el-tabs>
-          <!-- 筛选条件：按发布时间 -->
+          <!-- 筛选条件 -->
           <div class="filter-options" v-if="activeTab === 'articles' || activeTab === 'drafts' ">
-            <div class="filter-option active">
+            <!-- 按发布时间 -->
+            <div
+                class="filter-option"
+                :class="{ active: sortBy === 'createTime' }"
+                @click="handleSort('createTime')"
+            >
               <span>按最后发布时间</span>
               <el-icon><SortDown /></el-icon>
             </div>
-            <!-- 筛选条件：按访问量 -->
-            <div class="filter-option">
+            <!-- 按访问量 -->
+            <div
+                class="filter-option"
+                :class="{ active: sortBy === 'viewCount' }"
+                @click="handleSort('viewCount')"
+            >
               <span>按访问量</span>
               <el-icon><SortDown /></el-icon>
             </div>
@@ -189,7 +198,7 @@
                 </el-col>
               </el-row>
 
-              <div v-if="followees.length === 0" class="no-followees">
+              <div v-if="SubscribeBloggerList.length === 0" class="no-followees">
                 暂无关注的人
               </div>
             </div>
@@ -197,7 +206,49 @@
 
           <!-- 我的收藏区 -->
           <template v-if="activeTab === 'favorites'">
-
+            <!-- 判断没有收藏文章时提示 -->
+            <div v-if="starBlogs.total === 0 && activeTab === 'favorites'" class="no-articles">
+              博主暂时没有收藏的文章
+            </div>
+            <!-- 有收藏时显示收藏文章与分页条 -->
+            <div v-if="starBlogs.record.length">
+              <div class="articles-list">
+                <div v-for="(blog, index) in starBlogs.record" :key="index" class="article-item">
+                  <div class="article-header">
+                    <div class="title-section">
+                      <div class="article-title" @click="toBlogDetail(blog)">{{ blog.title }}</div>
+                    </div>
+                    <div class="user-section" @click="toUserProfile(blog.userId)">
+                      <el-avatar :size="24" :src="blog.userAvatar" class="user-avatar-starBlog"></el-avatar>
+                      <span class="username">{{ blog.username }}</span>
+                    </div>
+                  </div>
+                  <div class="article-desc">{{ blog.subTitle }}</div>
+                  <div class="article-meta">
+                    <el-tag size="small" type="primary" effect="plain">原创</el-tag>
+                    <span class="publish-info">博客创建于 {{ blog.createTime }}</span>
+                    <span class="article-stats">
+                  <span>{{ blog.viewCount }} 阅读</span>
+                  <span>{{ blog.likeCount }} 点赞</span>
+                  <span>{{ blog.starCount }} 收藏</span>
+                      <!--<span>{{ article.comments }} 评论</span>-->
+                </span>
+                  </div>
+                </div>
+              </div>
+              <!-- 分页组件绑定草稿分页参数 -->
+              <div class="pagination-wrapper">
+                <el-pagination
+                    v-model:current-page="starBlogsPageQueryDTO.pageNum"
+                    v-model:page-size="starBlogsPageQueryDTO.pageSize"
+                    :page-sizes="[3, 6, 10, 20]"
+                    background
+                    layout="total, sizes, prev, pager, next, jumper"
+                    :total="starBlogs.total"
+                    @size-change="handleStarBlogSizeChange"
+                    @current-change="handleStarBlogCurrentChange"/>
+              </div>
+            </div>
           </template>
 
           <!-- 草稿区 -->
@@ -250,31 +301,6 @@ import {ElMessage, ElNotification} from "element-plus";
 import router from "@/router/index.js";
 import request from "@/utils/request.js";
 
-// 模拟关注者数据
-const followees = ref([
-  {
-    id: 1,
-    username: '前端小王',
-    description: '专注 Vue 生态的开发者，喜欢分享技术心得'
-  },
-  {
-    id: 2,
-    username: 'UI设计师小刘',
-    description: '全栈设计师，擅长用户体验设计'
-  },
-  {
-    id: 3,
-    username: '后端老张',
-    description: 'Java 开发工程师，热爱微服务架构'
-  },
-  {
-    id: 4,
-    username: '全栈开发者Alex',
-    description: 'Node.js + React 技术栈实践者'
-  }
-]);
-
-
 // 从路由中获得此页面的博主id（还需要验证是否为本人页）
 const currentId = ref(useRoute().query.id)
 // 进入此页用户的id
@@ -283,6 +309,8 @@ const trueId = ref()
 const activeTab = ref('articles');
 // 判断当前是否为自己的页面
 const isMyPage = ref();
+// 按时间或访问量排序
+const sortBy = ref('createTime');
 // 文章区分页查询DTO
 const articlePageQueryDTO = ref({
   pageNum: 1,
@@ -293,6 +321,16 @@ const articlePageQueryDTO = ref({
   // 浏览量排序
   viewCountOrder: '',
 });
+// 收藏博客分页查询DTO
+const starBlogsPageQueryDTO =ref({
+  pageNum: 1,
+  pageSize: 3,
+  keyWords: '',
+  // 创建时间排序
+  createTimeOrder: '',
+  // 浏览量排序
+  viewCountOrder: '',
+})
 // 文章区分页查询DTO
 const draftPageQueryDTO = ref({
   pageNum: 1,
@@ -310,6 +348,11 @@ const articles = reactive({
   total: 0,
   record: [],
 });
+// 已收藏的文章
+const starBlogs = reactive({
+  total: 0,
+  record: [],
+})
 // 新增草稿数据
 const draftBlogs = reactive({
   total: 0,
@@ -328,6 +371,14 @@ const handleArticleCurrentChange = () =>{
   getArticles(trueId.value)
 }
 // 选择每页显示多少条记录时，触发分页查询
+const handleStarBlogSizeChange = () =>{
+  getStarBlogs(trueId.value)
+}
+// 跳转其他页面的时候触发分页查询
+const handleStarBlogCurrentChange = () =>{
+  getStarBlogs(trueId.value)
+}
+// 选择每页显示多少条记录时，触发分页查询
 const handleDraftSizeChange = () =>{
   getDrafts(trueId.value)
 }
@@ -343,6 +394,8 @@ onMounted(async () => {
   // console.log(isMyPage.value)
   // 查询文章，已经发布的博客称为 article文章
   getArticles(trueId.value)
+  // 查询收藏的博客
+  getStarBlogs(trueId.value)
   // 草稿博客
   getDrafts(trueId.value);
   // 获取浏览量前5的热门文章
@@ -368,8 +421,26 @@ const verifyIfIsMyself  = async (currentId) =>{
     console.error("获取用户信息失败", error);
   }
 }
+// 点击按创建时间，访问量排序
+const handleSort = (sortType) => {
+  sortBy.value = sortType;
+  if(activeTab.value === 'articles')
+    getArticles(trueId.value)
+  else
+    getDrafts(trueId.value)
+};
 // 获取文章区内容
 const getArticles = async (trueId) => {
+  // 判断当前以哪种方式筛选数据
+  let sortRule = {
+    createTimeOrder: '',
+    viewCountOrder: '',
+  }
+  if(sortBy.value === 'createTime')
+    sortRule.createTimeOrder = 'DESC'
+  else
+    sortRule.viewCountOrder = 'DESC'
+
   request.get('/user/blog/queryAllBlogsByUserId',{
     params:{
       userId: trueId,
@@ -378,9 +449,9 @@ const getArticles = async (trueId) => {
       pageSize: articlePageQueryDTO.value.pageSize,
       keyWords: articlePageQueryDTO.value.keyWords,
       // 创建时间排序
-      createTimeOrder: '',
+      createTimeOrder: sortRule.createTimeOrder,
       // 浏览量排序
-      viewCountOrder: ''
+      viewCountOrder: sortRule.viewCountOrder
     }
   }).then((res) => {
     // console.log(res)
@@ -388,8 +459,37 @@ const getArticles = async (trueId) => {
     articles.total = res.data.total
   })
 }
+// 获取收藏的博客
+const getStarBlogs = async (trueId) => {
+  request.get('/user/blog/getStarBlogs',{
+    params:{
+      userId: trueId,
+      pageNum: starBlogsPageQueryDTO.value.pageNum,
+      pageSize: starBlogsPageQueryDTO.value.pageSize,
+      keyWords: starBlogsPageQueryDTO.value.keyWords,
+      // 创建时间排序
+      createTimeOrder: '',
+      // 浏览量排序
+      viewCountOrder: ''
+    }
+  }).then((res) => {
+    console.log(res)
+    starBlogs.record = res.data.records
+    starBlogs.total = res.data.total
+  })
+}
 // 获取草稿数据的方法
 const getDrafts = (trueId) => {
+  // 判断当前以哪种方式筛选数据
+  let sortRule = {
+    createTimeOrder: '',
+    viewCountOrder: '',
+  }
+  if(sortBy.value === 'createTime')
+    sortRule.createTimeOrder = 'DESC'
+  else
+    sortRule.viewCountOrder = 'DESC'
+
   request.get('/user/blog/queryAllBlogsByUserId',{
     params:{
       userId: trueId,
@@ -398,9 +498,9 @@ const getDrafts = (trueId) => {
       pageSize: draftPageQueryDTO.value.pageSize,
       keyWords: draftPageQueryDTO.value.keyWords,
       // 创建时间排序
-      createTimeOrder: '',
+      createTimeOrder: sortRule.createTimeOrder,
       // 浏览量排序
-      viewCountOrder: ''
+      viewCountOrder: sortRule.viewCountOrder
     }
   }).then((res) => {
     // console.log(res);
@@ -451,25 +551,91 @@ const toBlogEdit = (blog) =>{
 }
 // 进入用户资料编辑页
 const toUserDetail = () =>{
-  router.push({
+  router.replace({
     name: 'userDetail',
     query: {
       id: trueId.value,
     }
-  })
+  }).then(() => {
+    location.reload(); // 强制刷新页面
+  });
 }
 // 进入用户档案详情页
 const toUserProfile = (id) =>{
-  router.push({
+  router.replace({
     name: 'userProfile',
     query: {
       id: id,
     }
-  })
+  }).then(() => {
+    location.reload(); // 强制刷新页面
+  });
 }
 </script>
 
 <style scoped>
+
+.user-avatar-starBlog {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  transition:
+      transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+      box-shadow 0.3s ease;
+}
+
+.user-section:hover .user-avatar-starBlog {
+  transform: scale(1.1) rotate(-2deg);
+  box-shadow: 0 4px 12px rgba(64, 158, 255, 0.3);
+}
+
+
+.article-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+
+.title-section {
+  flex: 1;
+}
+
+.article-title {
+  margin-bottom: 0;
+  margin-right: 15px;
+}
+
+.user-section {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+}
+
+.username {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px;
+  font-size: 14px;
+  color: #606266;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.user-section:hover .username {
+  color: #409eff;
+  font-weight: 500;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+/* 联动效果增强 */
+.user-section:hover {
+  color: #409eff;
+}
 
 .followee-name {
   font-weight: bold;
@@ -798,6 +964,7 @@ const toUserProfile = (id) =>{
   gap: 10px;
   font-size: 12px;
   color: #999;
+  margin-top: 6px;
 }
 
 .publish-info {
