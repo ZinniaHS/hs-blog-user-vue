@@ -15,7 +15,7 @@
             <el-icon class="repo-icon"><svg t="1687851392721" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="6349" width="24" height="24"><path d="M511.957333 12.650667C229.248 12.650667 0 241.877333 0 524.672c0 226.197333 146.688 418.090667 350.165333 485.802667 25.6 4.693333 34.944-11.093333 34.944-24.682667 0-12.16-0.426667-44.352-0.682666-87.082667-142.421333 30.933333-172.48-68.629333-172.48-68.629333C188.672 770.944 155.093333 755.2 155.093333 755.2c-46.549333-31.786667 3.52-31.146667 3.52-31.146667 51.456 3.626667 78.528 52.821333 78.528 52.821334 45.674667 78.336 119.829333 55.68 149.013334 42.581333 4.608-33.109333 17.856-55.68 32.512-68.458667-113.706667-12.928-233.216-56.853333-233.216-252.970666 0-55.893333 19.968-101.546667 52.693333-137.386667-5.290667-12.928-22.826667-65.002667 5.013333-135.509333 0 0 42.988-13.738667 140.8 52.48 40.832-11.349333 84.650667-17.024 128.170667-17.237334 43.52 0.213333 87.338667 5.888 128.213333 17.237334 97.749333-66.218667 140.650667-52.48 140.650667-52.48 27.946667 70.506667 10.410667 122.581333 5.12 135.509333 32.810667 35.84 52.608 81.493333 52.608 137.386667 0 196.693333-119.680 239.936-233.6 252.650666 18.389333 15.786667 34.773333 47.104 34.773333 94.912 0 68.522667-0.64 123.776-0.64 140.458667 0 13.696 9.216 29.610667 35.2 24.576C877.44 942.570667 1024 750.784 1024 524.672 1024 241.877333 794.730667 12.650667 511.957333 12.650667z"></path></svg></el-icon>
             GitHub
           </el-link>
-          <el-link type="success" href="https://gitee.com/yourusername/blog-project" target="_blank" :underline="false" style="margin-left: 20px;">
+          <el-link type="danger" href="https://gitee.com/yourusername/blog-project" target="_blank" :underline="false" style="margin-left: 20px;">
             <el-icon class="repo-icon"><svg t="1687851423407" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="7449" width="24" height="24"><path d="M512 1024C229.222 1024 0 794.778 0 512S229.222 0 512 0s512 229.222 512 512-229.222 512-512 512z m259.149-568.883h-290.74a25.293 25.293 0 0 0-25.292 25.293l-0.026 63.206c0 13.952 11.315 25.293 25.267 25.293h177.024c13.978 0 25.293 11.315 25.293 25.267v12.646a75.853 75.853 0 0 1-75.853 75.853h-240.23a25.293 25.293 0 0 1-25.267-25.293V417.203a75.853 75.853 0 0 1 75.827-75.853h353.946a25.293 25.293 0 0 0 25.267-25.292l0.077-63.207a25.293 25.293 0 0 0-25.268-25.293H417.152a189.62 189.62 0 0 0-189.62 189.645V771.15c0 13.977 11.316 25.293 25.294 25.293h372.94a170.65 170.65 0 0 0 170.65-170.65V480.384a25.293 25.293 0 0 0-25.293-25.267z"></path></svg></el-icon>
             Gitee
           </el-link>
@@ -126,9 +126,9 @@ onMounted(() => {
   initCharts();
   fetchContentTrend(contentTimeRange.value);
   fetchCategoryData();
-  fetchEngagementData();
-  fetchReadingTimeData();
-  fetchPopularArticles();
+  // fetchEngagementData();
+  // fetchReadingTimeData();
+  // fetchPopularArticles();
 
   // 响应式处理
   window.addEventListener('resize', handleResize);
@@ -174,7 +174,7 @@ const fetchOverviewData = async () => {
 // 获取内容趋势数据
 const fetchContentTrend = async (timeRange) => {
   try {
-    const response = await request.get(`/api/stats/content-trend?range=${timeRange}`);
+    const response = await request.get(`/statistics/getContentTrend?range=${timeRange}`);
     renderContentTrend(response.data);
   } catch (error) {
     console.error('获取内容趋势数据失败:', error);
@@ -194,7 +194,6 @@ const fetchContentTrend = async (timeRange) => {
     renderContentTrend(mockData);
   }
 };
-
 // 渲染内容趋势图表
 const renderContentTrend = (data) => {
   const option = {
@@ -283,8 +282,27 @@ const renderContentTrend = (data) => {
 // 获取分类数据
 const fetchCategoryData = async () => {
   try {
-    const response = await axios.get('/api/stats/categories');
-    renderCategoryChart(response.data);
+    const response = await request.get('/statistics/getBlogCategoryStatistics');
+    console.log("分类数据:", response.data); // 添加日志查看数据结构
+
+    // 确保数据是数组格式
+    if (Array.isArray(response.data)) {
+      renderCategoryChart(response.data);
+    } else if (response.data && Array.isArray(response.data.data)) {
+      // 如果数据在 data 属性中
+      renderCategoryChart(response.data.data);
+    } else {
+      console.error('分类数据格式不正确:', response.data);
+      // 使用模拟数据
+      const mockData = [
+        { name: '技术', value: 45 },
+        { name: '生活', value: 25 },
+        { name: '读书', value: 15 },
+        { name: '旅行', value: 10 },
+        { name: '其他', value: 5 }
+      ];
+      renderCategoryChart(mockData);
+    }
   } catch (error) {
     console.error('获取分类数据失败:', error);
 
@@ -302,6 +320,12 @@ const fetchCategoryData = async () => {
 
 // 渲染分类统计图表
 const renderCategoryChart = (data) => {
+  // 确保 data 是数组
+  if (!Array.isArray(data)) {
+    console.error('分类图表数据不是数组:', data);
+    data = []; // 设置为空数组避免错误
+  }
+
   const option = {
     tooltip: {
       trigger: 'item',
@@ -312,7 +336,7 @@ const renderCategoryChart = (data) => {
       orient: 'vertical',
       right: 10,
       top: 'center',
-      data: data.map(item => item.name)
+      data: data.map(item => item.name || '未知')
     },
     series: [
       {
@@ -395,9 +419,7 @@ const renderCategoryChart = (data) => {
 .project-logo {
   width: 150px;
   height: 150px;
-  border-radius: 50%;
   object-fit: cover;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   transition: transform 0.3s ease;
 }
 
