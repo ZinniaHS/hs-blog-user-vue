@@ -12,8 +12,8 @@
           <el-button :icon="Search" @click="pageQuery" />
         </template>
       </el-input>
-
     </div>
+
     <!-- 主内容区 -->
     <el-row :gutter="20" class="main-content">
       <!-- 左侧内容选择 -->
@@ -26,87 +26,127 @@
                     vertical
                     class="user-menu"
                     v-model="selectedIndex"
-                @select="handleMenuSelect"
+                    @select="handleMenuSelect"
                 >
-                <el-menu-item index="9" @click="handleWriteBlog">
-                  <el-icon><Notebook /></el-icon>
-                  <span>写博客</span>
-                </el-menu-item>
-                <el-menu-item index="10">
-                  <el-icon>
-                    <component :is="selectedIndex === '10' ? BellFilled : Bell" />
-                  </el-icon>
-                  <span>我的关注</span>
-                </el-menu-item>
-                <el-menu-item index="11">
-                  <el-icon>
-                    <component :is="selectedIndex === '11' ? StarFilled : Star" />
-                  </el-icon>
-                  <span>我的收藏</span>
-                </el-menu-item>
+                  <el-menu-item index="9" @click="handleWriteBlog">
+                    <el-icon><Notebook /></el-icon>
+                    <span>写博客</span>
+                  </el-menu-item>
+                  <el-menu-item index="10">
+                    <el-icon>
+                      <component :is="selectedIndex === '10' ? BellFilled : Bell" />
+                    </el-icon>
+                    <span>我的关注</span>
+                  </el-menu-item>
+                  <el-menu-item index="11">
+                    <el-icon>
+                      <component :is="selectedIndex === '11' ? StarFilled : Star" />
+                    </el-icon>
+                    <span>我的收藏</span>
+                  </el-menu-item>
                 </el-menu>
               </div>
             </nav>
           </div>
         </el-affix>
       </el-col>
+
       <!-- 中间内容区 -->
       <el-col :span="16" class="content-col">
         <div class="content-area">
-          <el-card
-              v-for="blog in blogs.record"
-              :key="blog.id"
-              class="blog-card"
-          >
-            <!-- 标题 和 用户头像名称 -->
-            <div class="blog-header">
-              <h3 @click="toBlogDetail(blog)">{{ blog.title }}</h3>
-              <div class="user-info" @click="toUserDetail(blog)">
-                <img :src="blog.userAvatar" class="user-avatar">
-                <span class="username">{{ blog.username }}</span>
+          <!-- 博客列表骨架屏 -->
+          <template v-if="loadingBlogs">
+            <div v-for="i in blogPageQueryDTO.pageSize" :key="i" class="skeleton-blog-card">
+              <div class="skeleton-blog-card__inner">
+                <div class="skeleton-header">
+                  <div class="skeleton-title"></div>
+                  <div class="skeleton-avatar">
+                    <div class="skeleton-circle"></div>
+                    <div class="skeleton-text"></div>
+                  </div>
+                </div>
+                <div class="skeleton-subtitle">
+                  <div class="skeleton-line"></div>
+                  <div class="skeleton-tag"></div>
+                </div>
+                <div class="skeleton-meta">
+                  <div class="skeleton-line short"></div>
+                </div>
               </div>
             </div>
-            <!--  副标题和分类标签  -->
-            <div class="blog-subtitle-container">
-              <div class="blog-subtitle">{{ blog.subTitle }}</div>
-              <el-tag type="primary" effect="dark">{{ blog.categoryName }}</el-tag>
+          </template>
+
+          <!-- 博客列表内容 -->
+          <template v-else>
+            <el-card
+                v-for="blog in blogs.record"
+                :key="blog.id"
+                class="blog-card"
+            >
+              <div class="blog-header">
+                <h3 @click="toBlogDetail(blog)">{{ blog.title }}</h3>
+                <div class="user-info" @click="toUserDetail(blog)">
+                  <img :src="blog.userAvatar" class="user-avatar">
+                  <span class="username">{{ blog.username }}</span>
+                </div>
+              </div>
+              <div class="blog-subtitle-container">
+                <div class="blog-subtitle">{{ blog.subTitle }}</div>
+                <el-tag type="primary" effect="dark">{{ blog.categoryName }}</el-tag>
+              </div>
+              <div class="blog-meta">
+                <span><el-icon><View /></el-icon> {{ blog.viewCount }}</span>
+                <el-divider direction="vertical" />
+                <span><el-icon><Pointer /></el-icon> {{ blog.likeCount }}</span>
+                <el-divider direction="vertical" />
+                <span><el-icon><Star /></el-icon> {{ blog.starCount }}</span>
+                <span class="ml-auto">发布时间：{{ formatDate(blog.createTime) }}</span>
+              </div>
+            </el-card>
+
+            <!-- 分页 -->
+            <div class="pagination-wrapper">
+              <el-pagination
+                  v-model:current-page="blogPageQueryDTO.pageNum"
+                  v-model:page-size="blogPageQueryDTO.pageSize"
+                  :page-sizes="[6, 10, 20]"
+                  background
+                  layout="total, sizes, prev, pager, next, jumper"
+                  :total="blogs.total"
+                  @size-change="handleSizeChange"
+                  @current-change="handleCurrentChange"
+              />
             </div>
-            <div class="blog-meta">
-              <span><el-icon><View /></el-icon>  {{ blog.viewCount }}</span>
-              <el-divider direction="vertical" />
-              <span><el-icon><Pointer /></el-icon>  {{ blog.likeCount }}</span>
-              <el-divider direction="vertical" />
-              <span><el-icon><Star /></el-icon>  {{ blog.starCount }}</span>
-              <span class="ml-auto">发布时间：{{ formatDate(blog.createTime) }}</span>
-            </div>
-          </el-card>
-          <!-- 分页 -->
-          <div class="pagination-wrapper">
-            <el-pagination
-                v-model:current-page="blogPageQueryDTO.pageNum"
-                v-model:page-size="blogPageQueryDTO.pageSize"
-                :page-sizes="[6, 10, 20]"
-                background
-                layout="total, sizes, prev, pager, next, jumper"
-                :total="blogs.total"
-                @size-change="handleSizeChange"
-                @current-change="handleCurrentChange"/>
-          </div>
+          </template>
         </div>
       </el-col>
+
       <!-- 右侧排行榜 -->
       <el-col :span="4" class="ranking-col">
         <div class="ranking-panel">
           <h3>浏览排行榜</h3>
-          <el-card
-              v-for="blog in topBlogs"
-              :key="blog.id"
-              class="ranking-card"
-          >
-            <div class="ranking-number">{{ blog.rank }}</div>
-            <h4 class="ranking-title" @click="toBlogDetail(blog)">{{ blog.title }}</h4>
-            <div class="views-count">{{ blog.viewCount }} 次浏览</div>
-          </el-card>
+
+          <!-- 排行榜骨架屏 -->
+          <template v-if="loadingTopBlogs">
+            <div v-for="i in 5" :key="i" class="skeleton-ranking-card">
+              <div class="skeleton-number"></div>
+              <div class="skeleton-ranking-title"></div>
+              <div class="skeleton-views"></div>
+            </div>
+          </template>
+
+          <!-- 排行榜内容 -->
+          <template v-else>
+            <el-card
+                v-for="blog in topBlogs"
+                :key="blog.id"
+                class="ranking-card"
+            >
+              <div class="ranking-number">{{ blog.rank }}</div>
+              <h4 class="ranking-title" @click="toBlogDetail(blog)">{{ blog.title }}</h4>
+              <div class="views-count">{{ blog.viewCount }} 次浏览</div>
+            </el-card>
+          </template>
         </div>
       </el-col>
     </el-row>
@@ -114,14 +154,15 @@
 </template>
 
 <script setup>
-import {ref, computed, onMounted, onBeforeUnmount, reactive, watch} from 'vue';
-import {ArrowDown, Notebook, Bell, Star, Search, BellFilled, StarFilled} from '@element-plus/icons-vue';
+import {ref, reactive, onMounted, watch} from 'vue';
+import {ArrowDown, Notebook, Bell, Star, Search, BellFilled, StarFilled, View, Pointer} from '@element-plus/icons-vue';
 import request from '@/utils/request'
 import router from "@/router/index.js";
 import {ElMessage} from "element-plus";
+
 // 获取当前用户id
 const userId = localStorage.getItem('userId');
-
+console.log(userId)
 // 搜索框中输入的内容
 const searchKeyword = ref('')
 // 当前左侧选择区选中的项目
@@ -137,6 +178,10 @@ const blogPageQueryDTO = reactive({
   pageSize: 10,
   keyWord: '',
 })
+// 加载状态
+const loadingBlogs = ref(true);
+const loadingTopBlogs = ref(true);
+
 // 选中左侧功能区项目后触发
 const handleMenuSelect = (index) => {
   if (selectedIndex.value === index) {
@@ -164,6 +209,7 @@ const toUserDetail = (blog) =>{
 }
 // 分页查询
 const load = () =>{
+  loadingBlogs.value = true;
   request.get('/user/blog/page',{
     params: {
       pageNum: blogPageQueryDTO.pageNum,
@@ -175,6 +221,8 @@ const load = () =>{
     blogs.record = res.data.records
   }).catch((err) => {
     console.log(err)
+  }).finally(() => {
+    loadingBlogs.value = false;
   })
 }
 // 点击搜索框后搜索数据
@@ -193,6 +241,14 @@ const handleCurrentChange = () =>{
 // 当搜索框清空时，自动分页查询全部
 watch(selectedIndex, (newVal) => {
   if (newVal === '10') {
+    // 触发查询关注博主的博客
+    // 首先先判断有没有登录，没有则跳转到登录页
+    if(userId===null){
+      router.replace({ name: 'login' }).then(() => {
+        ElMessage.info('请先登录')
+        location.reload(); // 强制刷新页面
+      });
+    }
     getSubscription();
   } else if (newVal === '11') {
     getStarBlogs();
@@ -211,50 +267,44 @@ const handleWriteBlog = () => {
     // 获取干净的当前路径，避免重定向叠加
     const currentPath = router.currentRoute.value.path;
 
-    router.push({
+    router.replace({
       path: '/login',
       query: {
         redirect: currentPath
       }
+    }).then(()=>{
+      location.reload(); // 强制刷新页面
     });
   } else {
     // 已登录时正常跳转
     router.push({ name: 'blogEdit' });
   }
 };
-const showTypeList = ref(false);
-// 点击外部关闭列表
-const handleClickOutside = (event) => {
-  if (!event.target.closest('.filter-panel')) {
-    showTypeList.value = false;
-  }
-};
+
 // 初始化
 onMounted(() => {
   // 分页查询博客
   load()
   // 获取Top5浏览量的博客
   getTopFiveBlog()
-  document.addEventListener('click', handleClickOutside);
-
-});
-onBeforeUnmount(() => {
-  document.removeEventListener('click', handleClickOutside);
 });
 // 获取Top5浏览量的博客
 const getTopFiveBlog = () =>{
+  loadingTopBlogs.value = true;
   request.get('/user/blog/getTopFiveBlog',{
   }).then((res) => {
-    console.log(res)
     topBlogs.value = res.data
   }).catch((err) => {
     console.log(err)
+  }).finally(() => {
+    loadingTopBlogs.value = false;
   })
 }
 // 排行榜数据
-const topBlogs = ref({})
+const topBlogs = ref([])
 // 获取当前用户关注的博主的所有博客
 const getSubscription = () =>{
+  loadingBlogs.value = true;
   request.get('/user/blog/getSubscription',{
     params: {
       userId: userId,
@@ -271,10 +321,13 @@ const getSubscription = () =>{
     blogs.record = res.data.records
   }).catch((err) => {
     console.log(err)
+  }).finally(() => {
+    loadingBlogs.value = false;
   })
 }
 // 获取当前用户收藏的所有博客
 const getStarBlogs = () =>{
+  loadingBlogs.value = true;
   request.get('/user/blog/getStarBlogs',{
     params: {
       userId: userId,
@@ -291,6 +344,8 @@ const getStarBlogs = () =>{
     blogs.record = res.data.records
   }).catch((err) => {
     console.log(err)
+  }).finally(() => {
+    loadingBlogs.value = false;
   })
 }
 
@@ -585,5 +640,134 @@ const formatDate = (date) => {
 .ranking-title:hover {
   color: #409eff;
   transform: scale(1.05);
+}
+
+/* 骨架屏样式 */
+.skeleton-blog-card {
+  background: #fff;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.skeleton-blog-card__inner {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.skeleton-header {
+  display: flex;
+  justify-content: space-between;
+}
+
+.skeleton-title {
+  height: 28px;
+  width: 65%;
+  background: #f0f2f5;
+  border-radius: 4px;
+  animation: pulse 1.5s infinite;
+}
+
+.skeleton-avatar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.skeleton-circle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #f0f2f5;
+  animation: pulse 1.5s infinite;
+}
+
+.skeleton-text {
+  width: 80px;
+  height: 16px;
+  background: #f0f2f5;
+  border-radius: 4px;
+  animation: pulse 1.5s infinite;
+}
+
+.skeleton-subtitle {
+  display: flex;
+  justify-content: space-between;
+}
+
+.skeleton-line {
+  width: 85%;
+  height: 20px;
+  background: #f0f2f5;
+  border-radius: 4px;
+  animation: pulse 1.5s infinite;
+}
+
+.skeleton-tag {
+  width: 60px;
+  height: 24px;
+  background: #f0f2f5;
+  border-radius: 12px;
+  animation: pulse 1.5s infinite;
+}
+
+.skeleton-meta {
+  width: 100%;
+}
+
+.skeleton-meta .skeleton-line.short {
+  width: 60%;
+  height: 16px;
+}
+
+.skeleton-ranking-card {
+  background: #fff;
+  border-radius: 8px;
+  padding: 15px 15px 15px 45px;
+  margin-bottom: 12px;
+  position: relative;
+  height: 80px;
+}
+
+.skeleton-number {
+  position: absolute;
+  left: 15px;
+  top: 15px;
+  width: 25px;
+  height: 25px;
+  background: #f0f2f5;
+  border-radius: 50%;
+  animation: pulse 1.5s infinite;
+}
+
+.skeleton-ranking-title {
+  width: 80%;
+  height: 18px;
+  background: #f0f2f5;
+  border-radius: 4px;
+  margin-bottom: 8px;
+  animation: pulse 1.5s infinite;
+}
+
+.skeleton-views {
+  width: 60%;
+  height: 14px;
+  background: #f0f2f5;
+  border-radius: 4px;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+  100% {
+    opacity: 1;
+  }
 }
 </style>

@@ -64,8 +64,40 @@
       当前筛选：<span>{{ getSelectedText }}</span>
     </div>
 
+    <!-- 骨架屏 -->
+    <div class="skeleton-container" v-if="loading">
+      <el-row :gutter="[16, 16]">
+        <el-col
+            v-for="index in skeletonCount"
+            :key="index"
+            :xs="24"
+            :sm="12"
+            :md="12"
+            :lg="12"
+        >
+          <div class="skeleton-card">
+            <div class="skeleton-content">
+              <div class="skeleton-cover">
+                <el-skeleton-item variant="image" class="skeleton-image" />
+              </div>
+              <div class="skeleton-info">
+                <el-skeleton-item variant="text" class="skeleton-title" />
+                <el-skeleton-item variant="text" class="skeleton-author" />
+                <div class="skeleton-desc">
+                  <el-skeleton-item variant="text" />
+                  <el-skeleton-item variant="text" />
+                  <el-skeleton-item variant="text" />
+                </div>
+                <el-skeleton-item variant="button" class="skeleton-tag" />
+              </div>
+            </div>
+          </div>
+        </el-col>
+      </el-row>
+    </div>
+
     <!--  图书列表  -->
-    <div class="book-list">
+    <div class="book-list" v-else>
       <el-row :gutter="[16, 16]">
         <el-col
             v-for="(book, index) in books.record"
@@ -85,13 +117,7 @@
               <div class="book-info">
                 <h1 class="book-title">{{ book.title }}</h1>
                 <p class="book-author">作者：{{ book.author }}</p>
-                <!--                <el-tooltip-->
-                <!--                    :content="book.description"-->
-                <!--                    raw-content-->
-                <!--                    class="custom-tooltip"-->
-                <!--                >-->
                 <p class="book-desc" >{{ book.description }}</p>
-                <!--                </el-tooltip>-->
                 <div class="book-meta">
                   <el-tag type="primary" size="small">热度：{{ book.downloadCount }}</el-tag>
                 </div>
@@ -103,7 +129,7 @@
     </div>
 
     <!-- 分页 -->
-    <div class="pagination-wrapper">
+    <div class="pagination-wrapper" v-if="!loading && books.total > 0">
       <el-pagination
           v-model:current-page="bookPageQueryDTO.pageNum"
           v-model:page-size="bookPageQueryDTO.pageSize"
@@ -123,6 +149,11 @@ import {reactive, ref, computed, onMounted, watch } from 'vue'
 import request from '@/utils/request'
 import {Search} from "@element-plus/icons-vue";
 import router from "@/router/index.js";
+
+// 加载状态
+const loading = ref(true);
+// 骨架屏显示数量
+const skeletonCount = ref(6);
 
 // 点击图书后去图书详情页
 const goToBookDetail = (book) =>{
@@ -182,7 +213,7 @@ function getAllCategory() {
 
           if (Array.isArray(category.children) && category.children.length > 0) {
             const childrenWithAll = [
-              { value: 0, label: '全部' }, // 二级菜单的“全部”也改为0
+              { value: 0, label: '全部' }, // 二级菜单的"全部"也改为0
               ...category.children.map(child => ({
                 value: child.id, // 确保子分类ID是数值
                 label: child.name
@@ -211,12 +242,15 @@ function getSelectedCategoryBooks(firstId, secondId) {
     console.log(res)
     books.total = res.data.total
     books.record = res.data.records
+    loading.value = false
   }).catch((err) => {
     console.log(err)
+    loading.value = false
   })
 }
 // 点击一级菜单选项后触发
 function handleFirstLevelClick(value) {
+  loading.value = true
   if (selectedFirst.value !== value) {
     selectedFirst.value = value;
     selectedSecond.value = value === 0 ? 0 : 0; // 根据后端逻辑调整
@@ -226,6 +260,7 @@ function handleFirstLevelClick(value) {
 }
 // 点击二级菜单选项后触发
 function handleSecondLevelClick(value) {
+  loading.value = true
   selectedSecond.value = value;
   const secondId = value === 0 ? 0 : value;
   getSelectedCategoryBooks(selectedFirst.value, secondId);
@@ -252,6 +287,7 @@ const bookPageQueryDTO = reactive({
 })
 // 分页查询
 const load = () =>{
+  loading.value = true
   request.get('/user/book/page',{
     params: {
       pageNum: bookPageQueryDTO.pageNum,
@@ -262,8 +298,10 @@ const load = () =>{
     books.total = res.data.total
     books.record = res.data.records
     console.log(books)
+    loading.value = false
   }).catch((err) => {
     console.log(err)
+    loading.value = false
   })
 }
 // 加载页面时调用分页查询并查询所有类型
@@ -427,7 +465,6 @@ watch(searchKeyword, (newValue) => {
   flex-direction: row;
   margin: 10px !important;
   transition: all 0.3s;
-
 }
 
 .book-content {
@@ -487,7 +524,6 @@ watch(searchKeyword, (newValue) => {
   margin-top: 10px;
 }
 
-
 @media (max-width: 768px) {
   .el-col {
     padding: 4px !important;
@@ -511,6 +547,70 @@ watch(searchKeyword, (newValue) => {
   display: flex;
   justify-content: center;
   padding: 0 20px;
+}
+
+/* 骨架屏样式 */
+.skeleton-container {
+  padding: 10px;
+}
+
+.skeleton-card {
+  background: #fff;
+  border-radius: 4px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+  margin: 10px;
+  padding: 10px;
+}
+
+.skeleton-content {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+}
+
+.skeleton-cover {
+  flex: 0 0 100px;
+  padding: 5px;
+}
+
+.skeleton-image {
+  width: 100px;
+  height: 150px;
+  border-radius: 2px;
+}
+
+.skeleton-info {
+  flex: 1;
+  padding: 0 7px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.skeleton-title {
+  height: 24px;
+  margin-bottom: 8px;
+}
+
+.skeleton-author {
+  height: 16px;
+  margin: 3px 0;
+}
+
+.skeleton-desc {
+  flex: 1;
+  margin: 8px 0;
+}
+
+.skeleton-desc .el-skeleton__item {
+  height: 16px;
+  margin-bottom: 4px;
+}
+
+.skeleton-tag {
+  width: 100px;
+  height: 28px;
+  margin-top: 10px;
 }
 
 </style>

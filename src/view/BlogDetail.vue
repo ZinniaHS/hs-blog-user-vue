@@ -1,5 +1,43 @@
 <template>
   <div class="blog-detail-container">
+    <div v-if="loading" class="skeleton-container">
+      <div class="skeleton-header">
+        <div class="skeleton-avatar"></div>
+        <div class="skeleton-userinfo">
+          <div class="skeleton-title"></div>
+          <div class="skeleton-meta"></div>
+        </div>
+      </div>
+
+      <div class="skeleton-main">
+        <div class="skeleton-title large"></div>
+        <div class="skeleton-meta"></div>
+
+        <div class="skeleton-content">
+          <div class="skeleton-line"></div>
+          <div class="skeleton-line"></div>
+          <div class="skeleton-line"></div>
+          <div class="skeleton-line"></div>
+          <div class="skeleton-line"></div>
+          <div class="skeleton-line"></div>
+          <div class="skeleton-line"></div>
+          <div class="skeleton-line"></div>
+          <div class="skeleton-line"></div>
+          <div class="skeleton-line"></div>
+        </div>
+
+        <div class="skeleton-footer">
+          <div class="skeleton-button"></div>
+          <div class="skeleton-button"></div>
+        </div>
+      </div>
+
+      <div class="skeleton-sidebar">
+        <div class="skeleton-title small"></div>
+        <div class="skeleton-list"></div>
+      </div>
+    </div>
+
     <!-- 左侧边栏 -->
     <div class="sidebar">
       <!-- 博主信息区域 -->
@@ -122,6 +160,8 @@ import router from "@/router/index.js";
 import {useRoute} from "vue-router";
 import {ElMessage} from "element-plus";
 
+const loading = ref(true);
+
 // 从路由中获得博客id
 const BlogId = Number(useRoute().query.id)
 // 当前博主id
@@ -145,10 +185,17 @@ const userStatus = ref({
 })
 // 初始化
 onMounted( async() => {
-  // 博客浏览量+1
-  await incrementViewCount()
-  // 展示博客详情
-  await showBlogDetail(BlogId)
+  try {
+    // 博客浏览量+1
+    await incrementViewCount()
+    // 展示博客详情
+    await showBlogDetail(BlogId)
+  } catch (error) {
+    console.error("加载博客详情失败:", error)
+    ElMessage.error("加载博客详情失败")
+  } finally {
+    loading.value = false
+  }
 })
 // 获取博客详情
 const showBlogDetail = async (id) => {
@@ -292,6 +339,135 @@ const getTopFiveBlogForOne = async () => {
 </script>
 
 <style scoped lang="scss">
+.skeleton-container {
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  gap: 20px;
+}
+
+.skeleton-header {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.skeleton-avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: linear-gradient(90deg, #f2f2f2 25%, #e6e6e6 37%, #f2f2f2 63%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s ease infinite;
+}
+
+.skeleton-userinfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.skeleton-title {
+  height: 24px;
+  background: linear-gradient(90deg, #f2f2f2 25%, #e6e6e6 37%, #f2f2f2 63%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s ease infinite;
+  border-radius: 4px;
+}
+
+.skeleton-title.large {
+  height: 36px;
+}
+
+.skeleton-title.small {
+  height: 20px;
+  width: 120px;
+}
+
+.skeleton-meta {
+  height: 18px;
+  width: 80%;
+  background: linear-gradient(90deg, #f2f2f2 25%, #e6e6e6 37%, #f2f2f2 63%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s ease infinite;
+  border-radius: 4px;
+}
+
+.skeleton-main {
+  flex: 1;
+  background-color: white;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+}
+
+.skeleton-content {
+  margin: 20px 0;
+}
+
+.skeleton-line {
+  height: 18px;
+  margin-bottom: 16px;
+  background: linear-gradient(90deg, #f2f2f2 25%, #e6e6e6 37%, #f2f2f2 63%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s ease infinite;
+  border-radius: 4px;
+}
+
+.skeleton-line:nth-child(1) { width: 98%; }
+.skeleton-line:nth-child(2) { width: 95%; }
+.skeleton-line:nth-child(3) { width: 97%; }
+.skeleton-line:nth-child(4) { width: 90%; }
+.skeleton-line:nth-child(5) { width: 85%; }
+.skeleton-line:nth-child(6) { width: 92%; }
+.skeleton-line:nth-child(7) { width: 96%; }
+.skeleton-line:nth-child(8) { width: 93%; }
+.skeleton-line:nth-child(9) { width: 98%; }
+.skeleton-line:nth-child(10) { width: 87%; }
+
+.skeleton-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.skeleton-button {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(90deg, #f2f2f2 25%, #e6e6e6 37%, #f2f2f2 63%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s ease infinite;
+}
+
+.skeleton-sidebar {
+  background-color: white;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  margin-top: 20px;
+}
+
+.skeleton-list {
+  height: 200px;
+  margin-top: 15px;
+  background: linear-gradient(90deg, #f2f2f2 25%, #e6e6e6 37%, #f2f2f2 63%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s ease infinite;
+  border-radius: 8px;
+}
+
+@keyframes skeleton-loading {
+  0% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: -100% 50%;
+  }
+}
+
+
 .author-avatar-name {
   display: flex;
   align-items: center;

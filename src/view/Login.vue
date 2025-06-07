@@ -40,12 +40,18 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import {useRouter, useRoute} from 'vue-router'
 import router from '@/router'
 import request from '@/utils/request'
 import { ElMessage } from 'element-plus'
 import { ArrowLeft } from '@element-plus/icons-vue'
+
+onMounted(async () => {
+  if(localStorage.getItem('token') === null) {
+    ElMessage.info('请登录！')
+  }
+})
 
 const routerInstance = useRouter()
 const route = useRoute()

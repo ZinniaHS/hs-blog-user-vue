@@ -1,6 +1,36 @@
 <template>
   <div class="profile-edit">
-    <el-card class="profile-card">
+    <!-- 骨架屏 -->
+    <el-card v-if="loading" class="skeleton-card">
+      <template #header>
+        <div class="skeleton-header"></div>
+      </template>
+      <div class="skeleton-content">
+        <div class="skeleton-form">
+          <div class="skeleton-form-item" v-for="i in 5" :key="i">
+            <div class="skeleton-label"></div>
+            <div class="skeleton-input"></div>
+          </div>
+          <div class="skeleton-form-item">
+            <div class="skeleton-label"></div>
+            <div class="skeleton-avatar">
+              <div class="skeleton-avatar-placeholder"></div>
+            </div>
+          </div>
+          <div class="skeleton-form-item">
+            <div class="skeleton-label"></div>
+            <div class="skeleton-textarea"></div>
+          </div>
+          <div class="skeleton-buttons">
+            <div class="skeleton-button"></div>
+            <div class="skeleton-button"></div>
+          </div>
+        </div>
+      </div>
+    </el-card>
+
+    <!-- 实际内容 -->
+    <el-card v-else class="profile-card">
       <template #header>
         <div class="card-header">
           <span>个人资料编辑</span>
@@ -18,15 +48,6 @@
         <el-form-item label="用户名" prop="username">
           <el-input v-model="userDetailDTO.username" placeholder="请输入用户名" />
         </el-form-item>
-
-<!--        &lt;!&ndash; 密码 &ndash;&gt;-->
-<!--        <el-form-item label="密码" prop="password">-->
-<!--          <el-input-->
-<!--              v-model="userDetailDTO.password"-->
-<!--              type="password"-->
-<!--              placeholder="请输入密码（不修改请留空）"-->
-<!--          />-->
-<!--        </el-form-item>-->
 
         <!-- 邮箱 -->
         <el-form-item label="邮箱" prop="email">
@@ -76,11 +97,14 @@
 </template>
 
 <script setup lang="ts">
-import {ref, onMounted, reactive, computed} from 'vue';
-import {useRoute} from "vue-router";
+import { ref, onMounted, computed } from 'vue';
+import { useRoute } from "vue-router";
 import { ElMessage } from 'element-plus';
 import router from "@/router/index.js";
 import request from "@/utils/request.js";
+
+// 加载状态
+const loading = ref(true);
 
 // 上传头像请求连接
 const uploadUrl = 'http://localhost:8080/common/upload'
@@ -153,22 +177,7 @@ const handleUploadError = (err: any) => {
   console.error('上传失败:', err);
   ElMessage.error('上传失败，请重试');
 };
-// 初始化
-onMounted(async () => {
-  await getUserDetail()
-})
 
-// 获取用户信息
-const getUserDetail = (()=>{
-  request.get('/user/getUserDetail', {
-    params:{
-      id: userId
-    }
-  }).then((res) => {
-    console.log(res)
-    userDetailDTO.value = res.data;
-  });
-})
 // 上传前认证
 const beforeAvatarUpload = (file) => {
   const isImage = file.type.startsWith('image/');
@@ -186,7 +195,6 @@ const beforeAvatarUpload = (file) => {
   return true;
 };
 
-
 // 添加上传请求头
 const uploadHeaders = computed(() => {
   // 从本地存储获取 token，根据你的实际认证方式调整
@@ -196,28 +204,56 @@ const uploadHeaders = computed(() => {
   };
 });
 
+// 初始化
+onMounted(async () => {
+  try {
+    await getUserDetail();
+  } catch (error) {
+    console.error('加载用户数据失败:', error);
+    ElMessage.error('加载用户数据失败');
+  } finally {
+    loading.value = false;
+  }
+});
+
+// 获取用户信息
+const getUserDetail = async () => {
+  return new Promise((resolve, reject) => {
+    request.get('/user/getUserDetail', {
+      params: {
+        id: userId
+      }
+    }).then((res) => {
+      console.log(res);
+      userDetailDTO.value = res.data;
+      resolve(res);
+    }).catch((err) => {
+      console.error(err);
+      reject(err);
+    });
+  });
+};
 </script>
 
 <style scoped>
-
-  .profile-edit {
-    max-width: 800px;
+.profile-edit {
+  max-width: 800px;
   margin: 0 auto;
   padding: 20px;
 }
 
-  .profile-card {
-    box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+.profile-card {
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
 }
 
-  .avatar-uploader .avatar {
+.avatar-uploader .avatar {
   width: 100px;
   height: 100px;
   display: block;
 }
 
-  .avatar-uploader-icon {
-    font-size: 28px;
+.avatar-uploader-icon {
+  font-size: 28px;
   color: #8c939d;
   width: 100px;
   height: 100px;
@@ -230,8 +266,105 @@ const uploadHeaders = computed(() => {
   transition: var(--el-transition-duration-fast);
 }
 
-  .avatar-uploader-icon:hover {
-    border-color: var(--el-color-primary);
+.avatar-uploader-icon:hover {
+  border-color: var(--el-color-primary);
 }
 
+/* 骨架屏样式 */
+.skeleton-card {
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+  margin-top: 20px;
+}
+
+.skeleton-header {
+  height: 24px;
+  background: linear-gradient(90deg, #f2f2f2 25%, #e6e6e6 37%, #f2f2f2 63%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s ease infinite;
+  margin: 15px;
+  border-radius: 4px;
+}
+
+.skeleton-content {
+  padding: 20px;
+}
+
+.skeleton-form {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+}
+
+.skeleton-form-item {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.skeleton-label {
+  width: 120px;
+  height: 24px;
+  background: linear-gradient(90deg, #f2f2f2 25%, #e6e6e6 37%, #f2f2f2 63%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s ease infinite;
+  border-radius: 4px;
+}
+
+.skeleton-input {
+  flex: 1;
+  height: 40px;
+  background: linear-gradient(90deg, #f2f2f2 25%, #e6e6e6 37%, #f2f2f2 63%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s ease infinite;
+  border-radius: 4px;
+}
+
+.skeleton-avatar {
+  flex: 1;
+  display: flex;
+}
+
+.skeleton-avatar-placeholder {
+  width: 100px;
+  height: 100px;
+  background: linear-gradient(90deg, #f2f2f2 25%, #e6e6e6 37%, #f2f2f2 63%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s ease infinite;
+  border-radius: 50%;
+}
+
+.skeleton-textarea {
+  flex: 1;
+  height: 80px;
+  background: linear-gradient(90deg, #f2f2f2 25%, #e6e6e6 37%, #f2f2f2 63%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s ease infinite;
+  border-radius: 4px;
+}
+
+.skeleton-buttons {
+  display: flex;
+  justify-content: flex-start;
+  gap: 20px;
+  margin-left: 140px;
+  margin-top: 20px;
+}
+
+.skeleton-button {
+  width: 120px;
+  height: 40px;
+  background: linear-gradient(90deg, #f2f2f2 25%, #e6e6e6 37%, #f2f2f2 63%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s ease infinite;
+  border-radius: 20px;
+}
+
+@keyframes skeleton-loading {
+  0% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: -100% 50%;
+  }
+}
 </style>

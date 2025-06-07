@@ -126,9 +126,6 @@ onMounted(() => {
   initCharts();
   fetchContentTrend(contentTimeRange.value);
   fetchCategoryData();
-  // fetchEngagementData();
-  // fetchReadingTimeData();
-  // fetchPopularArticles();
 
   // 响应式处理
   window.addEventListener('resize', handleResize);
@@ -278,7 +275,6 @@ const renderContentTrend = (data) => {
 
   contentChart.setOption(option);
 };
-
 // 获取分类数据
 const fetchCategoryData = async () => {
   try {
@@ -317,7 +313,6 @@ const fetchCategoryData = async () => {
     renderCategoryChart(mockData);
   }
 };
-
 // 渲染分类统计图表
 const renderCategoryChart = (data) => {
   // 确保 data 是数组
