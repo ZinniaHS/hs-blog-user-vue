@@ -81,6 +81,12 @@ const router = createRouter({
                     component: ()=>import( '../view/BookDetail.vue'),
                 },
                 {
+                    path: 'bookShelf',
+                    name: 'bookShelf',
+                    meta: {menuIndex: '2', title :'我的书架'},
+                    component: ()=>import( '../view/BookShelf.vue'),
+                },
+                {
                     path: 'userProfile',
                     name: 'userProfile',
                     meta: {title :'用户详情'},

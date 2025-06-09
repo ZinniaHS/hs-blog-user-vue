@@ -78,15 +78,26 @@
           </el-descriptions>
           <!--  按钮  -->
           <div class="action-buttons">
-            <a :href="book.filePath" :download="book.title">
-              <el-button type="primary" size="small">下载</el-button>
-            </a>
             <el-button
-                size="small"
+                plain
+                type="primary"
+                size="large"
+                @click="goToBookshelf"
+                v-if="collectBookStatus"
+            >
+              去我的书架查看
+            </el-button>
+            <el-button
+                type="primary"
+                size="large"
                 @click="addToBookshelf"
+                v-else
             >
               加入我的书架
             </el-button>
+            <a :href="book.filePath" :download="book.title">
+              <el-button  size="large">下载</el-button>
+            </a>
           </div>
         </el-col>
       </el-row>
@@ -111,13 +122,26 @@ import router from "@/router/index.js";
 import { useRoute } from "vue-router";
 import { ElMessage } from 'element-plus'
 
+// 图书id
+const BookId = useRoute().query.id
+// 图书是否已加入书架
+const collectBookStatus = ref(false)
+
 // 加载状态
 const loading = ref(true)
 // 判断当前登录状态，需要登录才能加入书架
-const isLoggedIn = computed(() => !!localStorage.getItem('token'))
+const isLoggedIn = localStorage.getItem('token') !== null
+// 判断用户是否已把此书加入书架
+const checkBookShelfStatus = ()=>{
+  request.get('/user/checkCollectBookStatus/'+BookId).then((res)=>{
+    console.log(res)
+    if(res.code === 1)
+      collectBookStatus.value = res.data
+  })
+}
 // 加入书架逻辑
 const addToBookshelf = () => {
-  if (!isLoggedIn.value) {
+  if (!isLoggedIn) {
     ElMessage({
       message: '请先登录！',
     })
@@ -128,9 +152,25 @@ const addToBookshelf = () => {
   } else {
     // 已登录状态下的业务逻辑
     console.log('加入书架操作')
+    request.post('/user/collectBook/'+BookId).then((res) => {
+      if(res.code === 1){
+        ElMessage.success('已加入书架！')
+        checkBookShelfStatus()
+      }
+      else
+        ElMessage.error(res.msg)
+    })
   }
 }
-const BookId = useRoute().query.id
+// 从书架移除图书
+const removeFromBookshelf = () => {
+  request.post('/user/removeCollectBook/'+BookId).then((res) => {
+    if(res.code === 1)
+      ElMessage.success('已从书架移除！')
+    else
+      ElMessage.error(res.msg)
+  })
+}
 // 图书详情
 const book = ref({})
 // 查询图书详情
@@ -148,7 +188,18 @@ const showDetail = (id) => {
 // 进入页面查询图书详情
 onMounted(() => {
   showDetail(BookId)
+  checkBookShelfStatus()
 })
+const goToBookshelf = ()=>{
+  if(localStorage.getItem('token') === null) {
+    router.replace({name:'login'}).then(() => {
+      location.reload(); // 强制刷新页面
+    });
+  }
+  router.replace({name:'bookShelf'}).then(() => {
+    location.reload(); // 强制刷新页面
+  });
+}
 const formatWordCount = (count) => {
   return `${(count / 10000).toFixed(1)}万字`
 }
@@ -156,15 +207,29 @@ const formatWordCount = (count) => {
 
 <style scoped>
 
-/* 深度选择器修改 - 确保能正确影响Element Plus组件 */
 .custom-descriptions :deep(.el-descriptions__label) {
-  font-size: 18px !important; /* 使用!important提高优先级 */
+  font-size: 18px !important;
   font-weight: bold;
 }
 
 .custom-descriptions :deep(.el-descriptions__content) {
   font-size: 18px !important;
   color: #333;
+}
+
+/* 调整描述项的间距，使其均匀分布 */
+.custom-descriptions :deep(.el-descriptions__cell) {
+  padding: 16px 20px !important; /* 增加上下内边距 */
+}
+
+.custom-descriptions :deep(.el-descriptions__body) {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.custom-descriptions :deep(.el-descriptions__row) {
+  margin-bottom: 12px; /* 行间距 */
 }
 
 /* 修改作品简介的字体大小 */
@@ -269,7 +334,7 @@ const formatWordCount = (count) => {
 
 /* 原有样式 */
 .action-buttons {
-  margin-top: 20px;
+  margin-top: -40px; /* 调整按钮上边距，使其与描述内容保持适当距离 */
   display: flex;
   gap: 10px;
   justify-content: flex-start;
@@ -292,6 +357,7 @@ const formatWordCount = (count) => {
 
 .el-descriptions {
   background-color: #fff;
+  height: 100%; /* 确保描述区域占满整个高度 */
 }
 
 .content-section {

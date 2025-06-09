@@ -25,8 +25,9 @@
           <div class="user-name-section">
             <h2>{{ userInfo.username }}</h2>
             <div class="follow-action">
-              <el-button v-if="!isMyPage" size="small" plain round>已关注</el-button>
-              <el-button v-else size="small" plain round @click="toUserDetail">编辑资料</el-button>
+              <el-button v-if="!isMyPage&&followStatus" size="small" plain round @click="unsubscribeBlogger">已关注</el-button>
+              <el-button v-if="!isMyPage&&!followStatus" size="small" type="primary" round @click="subscribeBlogger">关注</el-button>
+              <el-button v-if="isMyPage&&loginStatus" size="small" plain round @click="toUserDetail">编辑资料</el-button>
             </div>
           </div>
           <div class="user-stats">
@@ -349,6 +350,10 @@ import {ElMessage} from "element-plus";
 import router from "@/router/index.js";
 import request from "@/utils/request.js";
 
+const loginStatus = localStorage.getItem('token') != null
+
+const followStatus = ref(false);
+
 // 加载状态
 const loadingUserInfo = ref(true);
 const loadingTopArticles = ref(true);
@@ -443,10 +448,10 @@ const handleDraftCurrentChange = () =>{
 onMounted(async () => {
   // 首先判断是否为自己的页面
   await verifyIfIsMyself(currentId.value);
-
   // 初始化加载博主信息
   try {
     await request.get(`/user/getUserInfoById?id=${currentId.value}`, {}).then((res) => {
+      console.log(res.data)
       userInfo.value = res.data;
       trueId.value = res.data.id;
       loadingUserInfo.value = false; // 数据加载完成
@@ -461,7 +466,44 @@ onMounted(async () => {
 
   // 加载主内容区数据
   loadMainContentData();
+
+  // 获取关注状态
+  getFollowStatus()
 })
+// 获取关注博主状态
+const getFollowStatus = () =>{
+  request.get('/user/getSubscribeStatus/'+currentId.value).then((res) => {
+    followStatus.value = res.data;
+  })
+}
+// 关注博主
+const subscribeBlogger = () =>{
+  if(!loginStatus)
+    router.replace('/login').then(()=>{
+      location.reload()
+    });
+  let bloggerId = trueId.value;
+  request.post('/user/subscribeBlogger/'+bloggerId, {})
+      .then((res) => {
+        ElMessage.success('关注成功')
+        getFollowStatus()
+      })
+      .catch((err) => {
+        console.log(err)
+      })
+}
+// 取消关注博主
+const unsubscribeBlogger = () =>{
+  let bloggerId = trueId.value;
+  request.post('/user/unsubscribeBlogger/'+bloggerId, {})
+      .then((res) => {
+        ElMessage.success('取消关注成功')
+        getFollowStatus()
+      })
+      .catch((err) => {
+        console.log(err)
+      })
+}
 // 加载主内容区数据
 const loadMainContentData = async () => {
   try {
